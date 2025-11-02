@@ -7,6 +7,7 @@ class ColumnPublic(BaseModel):
     id: int
     position: int
     name: str
+    is_public: bool
 
 
 class ColumnCreate(BaseModel):
@@ -16,3 +17,4 @@ class ColumnCreate(BaseModel):
 class ColumnUpdate(BaseModel):
     position: UnsetType | int = Unset
     name: UnsetType | str = Unset
+    is_public: UnsetType | str = Unset

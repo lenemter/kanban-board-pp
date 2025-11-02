@@ -21,7 +21,13 @@ async def create_board(
     current_user: api.dependencies.CurrentUserDep,
     board_create: api.schemas.BoardCreate
 ):
-    return api.db.create_board(current_user, **board_create.model_dump())
+    board = api.db.create_board(current_user, **board_create.model_dump())
+
+    api.db.create_column(board, name="To Do")
+    api.db.create_column(board, name="In Progress")
+    api.db.create_column(board, name="Done")
+
+    return board
 
 
 @router.get("/boards/{board_id}", response_model=api.schemas.BoardPublic)

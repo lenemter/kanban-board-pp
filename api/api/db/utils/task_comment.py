@@ -19,14 +19,15 @@ def get_task_comments(task: Task) -> list[TaskComment]:
         )
 
 
-def create_task_comment(task: Task, author: User, **kwargs) -> TaskComment:
+def create_task_comment(task: Task, author: User | None, **kwargs) -> TaskComment:
     from .. import engine, TaskComment
 
     assert task.id is not None
-    assert author.id is not None
+
+    created_by = author.id if author is not None else None
 
     with Session(engine) as session:
-        new_task_comment = TaskComment(task_id=task.id, created_by=author.id, **kwargs)
+        new_task_comment = TaskComment(task_id=task.id, created_by=created_by, **kwargs)
         session.add(new_task_comment)
         session.commit()
         session.refresh(new_task_comment)

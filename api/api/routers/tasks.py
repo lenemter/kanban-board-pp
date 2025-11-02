@@ -75,13 +75,24 @@ async def update_task(
     board, column, task = board_column_and_task
 
     if not isinstance(task_update.column_id, api.schemas.UnsetType) and task.column_id != task_update.column_id:
-        validate_new_column(board, task_update.column_id)
+        new_column = validate_new_column(board, task_update.column_id)
+        if new_column != column:
+            api.db.create_task_comment(task, None, content=f"Moved from {column.name} to {new_column.name}")
+
+    if not isinstance(task_update.assignee_id, api.schemas.UnsetType) and task.assignee_id != task_update.assignee_id:
+        old_assignee = api.db.get_user_by_id(task.assignee_id)
+        if old_assignee is not None:
+            api.db.create_task_comment(task, None, content=f"Unassigned {old_assignee.name}")
+
+        new_assignee = validate_new_assignee(board, task_update.assignee_id)
+        if new_assignee is not None:
+            api.db.create_task_comment(task, None, content=f"Assigned {new_assignee.name}")
 
     if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.position != task.position:
         validate_new_position(column, task_update.position)
 
-    if not isinstance(task_update.assignee_id, api.schemas.UnsetType) and task.assignee_id != task_update.assignee_id:
-        validate_new_assignee(board, task_update.assignee_id)
+    if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.name != task.name:
+        api.db.create_task_comment(task, None, content=f"~~{task.name}~~ {task_update.name}")
 
     return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
 

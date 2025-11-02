@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 
 import api.db
 import api.dependencies
@@ -41,6 +41,11 @@ async def update_task_comment(
 async def delete_task_comment(
     board_column_task_and_comment: api.dependencies.BoardColumnTaskCommentDep,
     session: api.dependencies.SessionDep,
+    current_user: api.dependencies.CurrentUserDep
 ):
     _, _, _, comment = board_column_task_and_comment
+
+    if current_user.id != comment.created_by:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
+
     return api.db.delete_task_comment(session, comment)

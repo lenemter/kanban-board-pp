@@ -12,11 +12,11 @@ def get_user_by_id(user_id: int | None) -> User | None:
         return session.exec(select(User).where(User.id == user_id)).first()
 
 
-def get_user_by_username(username: str) -> User | None:
+def get_user_by_email(email: str) -> User | None:
     from .. import engine, User
 
     with Session(engine) as session:
-        return session.exec(select(User).where(User.username == username)).first()
+        return session.exec(select(User).where(User.email == email)).first()
 
 
 def register_user(**kwargs) -> User:

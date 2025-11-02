@@ -5,15 +5,15 @@ from .unset_type import Unset, UnsetType
 
 class UserPublic(BaseModel):
     id: int
-    name: str
+    email: str
 
 
 class UserCreate(BaseModel):
-    username: str
+    email: str
     name: str
     password: str
 
 
 class UserUpdate(BaseModel):
-    name: UnsetType | str = Unset
+    email: UnsetType | str = Unset
     password: UnsetType | str = Unset

@@ -31,13 +31,13 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> api
 
     try:
         payload = jwt.decode(token, api.utils.read_secret("SECRET_KEY"), algorithms=[api.utils.HASH_ALGORITHM])
-        username = payload.get("sub")
-        if username is None:
+        email = payload.get("sub")
+        if email is None:
             raise credentials_exception
     except jwt.InvalidTokenError:
         raise credentials_exception
 
-    user = api.db.get_user_by_username(username)
+    user = api.db.get_user_by_email(email)
     if user is None:
         raise credentials_exception
     if user.id is None:

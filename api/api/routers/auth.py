@@ -19,8 +19,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
-def authenticate_user(username: str, password: str) -> api.db.User | None:
-    user = api.db.get_user_by_username(username)
+def authenticate_user(email: str, password: str) -> api.db.User | None:
+    user = api.db.get_user_by_email(email)
     if user is None:
         return None
     if not verify_password(password, user.hashed_password):
@@ -46,28 +46,28 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     return create_access_token(
-        data={"sub": user.username},
+        data={"sub": user.email},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(user_create: api.schemas.UserCreate) -> api.schemas.Token:
-    if api.db.get_user_by_username(user_create.username) is not None:
+    if api.db.get_user_by_email(user_create.email) is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Username already taken")
 
     new_user = api.db.register_user(
-        username=user_create.username,
+        email=user_create.email,
         hashed_password=api.utils.get_password_hash(user_create.password),
         name=user_create.name,
     )
 
     return create_access_token(
-        data={"sub": new_user.username},
+        data={"sub": new_user.email},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )

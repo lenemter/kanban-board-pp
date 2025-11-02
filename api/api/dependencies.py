@@ -132,3 +132,25 @@ BoardColumnTaskCommentDep = Annotated[
     tuple[api.db.Board, api.db.Column, api.db.Task, api.db.TaskComment],
     Depends(get_board_column_task_and_comment)
 ]
+
+# --- Subtask ---
+
+
+def get_board_column_task_and_subtask(
+    current_user: CurrentUserDep,
+    subtask_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.Column, api.db.Task, api.db.Subtask]:
+    subtask = session.get(api.db.Subtask, subtask_id)
+    if subtask is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Subtask not found")
+
+    board, column, task = get_board_column_and_task(current_user, subtask.task_id, session)
+
+    return board, column, task, subtask
+
+
+BoardColumnTaskSubtaskDep = Annotated[
+    tuple[api.db.Board, api.db.Column, api.db.Task, api.db.Subtask],
+    Depends(get_board_column_task_and_subtask)
+]

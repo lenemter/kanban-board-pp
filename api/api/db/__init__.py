@@ -24,5 +24,6 @@ __all__ = [
     "get_owned_boards", "create_board", "update_board", "delete_board",
     "get_column_by_id", "get_columns", "create_column", "update_column", "delete_column",
     "get_tasks", "create_task", "update_task", "delete_task",
-    "get_task_comments", "create_task_comment", "update_task_comment", "delete_task_comment"
+    "get_task_comments", "create_task_comment", "update_task_comment", "delete_task_comment",
+    "get_subtasks", "create_subtask", "update_subtask", "delete_subtask",
 ]

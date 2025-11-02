@@ -62,3 +62,32 @@ def owner_get_board(board_id: int, current_user: CurrentUserDep, session: Sessio
 
 
 BoardOwnerAccessDep = Annotated[api.db.Board, Depends(owner_get_board)]
+
+# --- Column ---
+
+
+def user_get_board(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
+    board = session.get(api.db.Board, board_id)
+    if board is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
+    if not board.owner_id == current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
+
+    return board
+
+
+def get_board_and_column(
+    current_user: CurrentUserDep,
+    column_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.Column]:
+    column = session.get(api.db.Column, column_id)
+    if column is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Column not found")
+
+    board = user_get_board(column.board_id, current_user, session)
+
+    return board, column
+
+
+BoardColumnDep = Annotated[tuple[api.db.Board, api.db.Column], Depends(get_board_and_column)]

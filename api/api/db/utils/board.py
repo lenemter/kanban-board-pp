@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from .. import Board, User
 
 
-def get_owned_boards(user_id: int | None) -> list["Board"]:
+def get_owned_boards(user_id: int | None) -> list[Board]:
     from .. import engine, Board
 
     with Session(engine) as session:
@@ -19,8 +19,10 @@ def get_owned_boards(user_id: int | None) -> list["Board"]:
         )
 
 
-def create_board(owner: "User", **kwargs) -> "Board":
+def create_board(owner: User, **kwargs) -> Board:
     from .. import engine, Board
+
+    assert owner.id is not None
 
     with Session(engine) as session:
         new_board = Board(owner_id=owner.id, **kwargs)
@@ -31,7 +33,7 @@ def create_board(owner: "User", **kwargs) -> "Board":
         return new_board
 
 
-def update_board(session: Session, board: "Board", **kwargs) -> "Board":
+def update_board(session: Session, board: Board, **kwargs) -> Board:
     board.sqlmodel_update(kwargs)
     session.add(board)
     session.commit()
@@ -40,6 +42,6 @@ def update_board(session: Session, board: "Board", **kwargs) -> "Board":
     return board
 
 
-def delete_board(session: Session, board: "Board") -> None:
+def delete_board(session: Session, board: Board) -> None:
     session.delete(board)
     session.commit()

@@ -33,4 +33,4 @@ async def edit_user_me(
     if not isinstance(user_update.password, api.schemas.UnsetType):
         to_update["hashed_password"] = api.utils.get_password_hash(user_update.password)
 
-    return api.db.update_user(session, current_user, to_update)
+    return api.db.update_user(session, current_user, **to_update)

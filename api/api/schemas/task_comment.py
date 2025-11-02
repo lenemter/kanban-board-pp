@@ -9,7 +9,7 @@ class TaskCommentPublic(BaseModel):
     id: int
     content: str
     created_at: datetime
-    created_by: int | None
+    author: int | None
 
 
 class TaskCommentCreate(BaseModel):

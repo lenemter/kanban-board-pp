@@ -27,7 +27,7 @@ def create_task_comment(task: Task, author: User | None, **kwargs) -> TaskCommen
     created_by = author.id if author is not None else None
 
     with Session(engine) as session:
-        new_task_comment = TaskComment(task_id=task.id, created_by=created_by, **kwargs)
+        new_task_comment = TaskComment(task_id=task.id, author=created_by, **kwargs)
         session.add(new_task_comment)
         session.commit()
         session.refresh(new_task_comment)

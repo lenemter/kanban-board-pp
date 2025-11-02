@@ -45,7 +45,7 @@ async def delete_task_comment(
 ):
     _, _, _, comment = board_column_task_and_comment
 
-    if current_user.id != comment.created_by:
+    if current_user.id != comment.author:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
 
     return api.db.delete_task_comment(session, comment)

@@ -57,7 +57,7 @@ async def add_task(
 
     validate_new_assignee(board, task_create.assignee_id)
 
-    return api.db.create_task(column, created_by=current_user.id, **task_create.model_dump())
+    return api.db.create_task(column, author=current_user.id, **task_create.model_dump())
 
 
 @router.get("/tasks/{task_id}", response_model=api.schemas.TaskPublic)
@@ -91,8 +91,8 @@ async def update_task(
     if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.position != task.position:
         validate_new_position(column, task_update.position)
 
-    if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.name != task.name:
-        api.db.create_task_comment(task, None, content=f"~~{task.name}~~ {task_update.name}")
+    if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.title != task.title:
+        api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
 
     return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
 

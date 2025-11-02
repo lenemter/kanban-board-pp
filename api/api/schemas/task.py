@@ -8,15 +8,15 @@ from .unset_type import Unset, UnsetType
 class TaskPublic(BaseModel):
     id: int
     position: int
-    name: str
+    title: str
     description: str | None
     assignee_id: int | None
     created_at: datetime
-    created_by: int
+    author: int
 
 
 class TaskCreate(BaseModel):
-    name: str
+    title: str
     description: str | None
     assignee_id: int | None
 
@@ -24,6 +24,6 @@ class TaskCreate(BaseModel):
 class TaskUpdate(BaseModel):
     column_id: UnsetType | int = Unset
     position: UnsetType | int = Unset
-    name: UnsetType | str = Unset
+    title: UnsetType | str = Unset
     description: UnsetType | str | None = Unset
     assignee_id: UnsetType | int | None = Unset

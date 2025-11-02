@@ -7,7 +7,7 @@ class ColumnPublic(BaseModel):
     id: int
     position: int
     name: str
-    is_public: bool
+    tasks_limit: int | None
 
 
 class ColumnCreate(BaseModel):
@@ -17,4 +17,4 @@ class ColumnCreate(BaseModel):
 class ColumnUpdate(BaseModel):
     position: UnsetType | int = Unset
     name: UnsetType | str = Unset
-    is_public: UnsetType | str = Unset
+    tasks_limit: UnsetType | int | None = Unset

@@ -91,3 +91,22 @@ def get_board_and_column(
 
 
 BoardColumnDep = Annotated[tuple[api.db.Board, api.db.Column], Depends(get_board_and_column)]
+
+# --- Task ---
+
+
+def get_board_column_and_task(
+    current_user: CurrentUserDep,
+    task_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.Column, api.db.Task]:
+    task = session.get(api.db.Task, task_id)
+    if task is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Task not found")
+
+    board, column = get_board_and_column(current_user, task.column_id, session)
+
+    return board, column, task
+
+
+BoardColumnTaskDep = Annotated[tuple[api.db.Board, api.db.Column, api.db.Task], Depends(get_board_column_and_task)]

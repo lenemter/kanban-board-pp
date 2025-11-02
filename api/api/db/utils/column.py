@@ -6,6 +6,13 @@ if TYPE_CHECKING:
     from .. import Board, Column
 
 
+def get_column_by_id(column_id: int) -> Column | None:
+    from .. import engine, Column
+
+    with Session(engine) as session:
+        return session.get(Column, column_id)
+
+
 def get_columns(board: Board) -> list[Column]:
     from .. import engine, Column
 

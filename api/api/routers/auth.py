@@ -9,7 +9,6 @@ import bcrypt
 import api.db
 import api.schemas
 import api.utils
-import api.schemas
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

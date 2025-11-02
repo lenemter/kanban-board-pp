@@ -47,3 +47,18 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> api
 
 
 CurrentUserDep = Annotated[api.db.User, Depends(get_current_user)]
+
+# -- Board ---
+
+
+def owner_get_board(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
+    board = session.get(api.db.Board, board_id)
+    if board is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
+    if board.owner_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
+
+    return board
+
+
+BoardOwnerAccessDep = Annotated[api.db.Board, Depends(owner_get_board)]

@@ -104,3 +104,12 @@ async def delete_task(
 ):
     _, _, task = board_column_and_task
     api.db.delete_task(session, task)
+
+
+@router.post("/tasks/{task_id}/tags", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskTagPublic)
+async def add_task_tag(
+    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    task_tag_create: api.schemas.TaskTagCreate,
+):
+    _, _, task = board_column_and_task
+    return api.db.create_task_tag(task, **task_tag_create.model_dump(exclude_unset=True))

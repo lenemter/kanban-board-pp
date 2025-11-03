@@ -92,6 +92,25 @@ def get_board_and_column(
 
 BoardColumnDep = Annotated[tuple[api.db.Board, api.db.Column], Depends(get_board_and_column)]
 
+# --- Board Tag ---
+
+
+def get_board_and_tag(
+    current_user: CurrentUserDep,
+    tag_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.BoardTag]:
+    tag = session.get(api.db.BoardTag, tag_id)
+    if tag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
+
+    board = owner_get_board(tag.board_id, current_user, session)
+
+    return board, tag
+
+
+BoardTagDep = Annotated[tuple[api.db.Board, api.db.BoardTag], Depends(get_board_and_tag)]
+
 # --- Task ---
 
 

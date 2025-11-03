@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from .task_tag import TaskTagPublic
 from .unset_type import Unset, UnsetType
 
 
@@ -13,6 +14,7 @@ class TaskPublic(BaseModel):
     assignee_id: int | None
     created_at: datetime
     author: int
+    tags: list[TaskTagPublic]
 
 
 class TaskCreate(BaseModel):

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from sqlmodel import Session, select
 
 if TYPE_CHECKING:
-    from .. import Column, Task
+    from .. import Column, Task, TaskTag
 
 
 def get_tasks(column: Column) -> list[Task]:
@@ -45,3 +45,17 @@ def update_task(session: Session, task: Task, **kwargs) -> Task:
 def delete_task(session: Session, task: Task) -> None:
     session.delete(task)
     session.commit()
+
+
+def create_task_tag(task: Task, **kwargs) -> TaskTag:
+    from .. import engine, TaskTag
+
+    assert task.id is not None
+
+    with Session(engine) as session:
+        new_task_tag = TaskTag(task_id=task.id, **kwargs)
+        session.add(new_task_tag)
+        session.commit()
+        session.refresh(new_task_tag)
+
+        return new_task_tag

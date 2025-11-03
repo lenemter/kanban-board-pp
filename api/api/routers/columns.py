@@ -16,24 +16,18 @@ def validate_position(board: api.db.Board, new_position: int):
             raise HTTPException(status.HTTP_409_CONFLICT, "This position is already taken")
 
 
-@router.get("/boards/{board_id}/columns/", response_model=list[api.schemas.ColumnPublic])
+@router.get("/boards/{board_id}/columns", response_model=list[api.schemas.ColumnPublic])
 async def get_columns(board: api.dependencies.BoardViewAccessDep):
     return api.db.get_columns(board)
 
 
-@router.post(
-    "/boards/{board_id}/columns/",
-    status_code=status.HTTP_201_CREATED,
-    response_model=api.schemas.ColumnPublic
-)
+@router.post("/boards/{board_id}/columns", status_code=status.HTTP_201_CREATED, response_model=api.schemas.ColumnPublic)
 async def create_column(board: api.dependencies.BoardCollaboratorAccessDep, column_create: api.schemas.ColumnCreate):
     return api.db.create_column(board, **column_create.model_dump())
 
 
 @router.get("/columns/{column_id}", response_model=api.schemas.ColumnPublic)
-async def get_column(
-    board_and_column: api.dependencies.BoardColumnDep,
-):
+async def get_column(board_and_column: api.dependencies.BoardColumnDep):
     _, column = board_and_column
     return column
 
@@ -58,4 +52,4 @@ async def delete_column(
     session: api.dependencies.SessionDep
 ) -> None:
     _, column = board_and_column
-    api.db.delete_column(session, column)
+    api.db.delete_object(session, column)

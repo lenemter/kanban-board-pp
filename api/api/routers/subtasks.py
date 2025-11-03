@@ -20,8 +20,7 @@ async def get_subtask(board_column_and_task: api.dependencies.BoardColumnTaskDep
 )
 async def create_subtask(
     board_column_and_task: api.dependencies.BoardColumnTaskDep,
-    subtask_create: api.schemas.SubtaskCreate,
-    current_user: api.dependencies.CurrentUserDep,
+    subtask_create: api.schemas.SubtaskCreate
 ):
     _, _, task = board_column_and_task
     return api.db.create_subtask(task, **subtask_create.model_dump(exclude_unset=True))
@@ -43,4 +42,4 @@ async def delete_subtask(
     session: api.dependencies.SessionDep
 ):
     _, _, _, subtask = board_column_task_and_subtask
-    return api.db.delete_subtask(session, subtask)
+    return api.db.delete_object(session, subtask)

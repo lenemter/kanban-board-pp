@@ -42,11 +42,6 @@ def update_task(session: Session, task: Task, **kwargs) -> Task:
     return task
 
 
-def delete_task(session: Session, task: Task) -> None:
-    session.delete(task)
-    session.commit()
-
-
 def create_task_tag(task: Task, **kwargs) -> TaskTag:
     from .. import engine, TaskTag
 

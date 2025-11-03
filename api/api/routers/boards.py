@@ -7,21 +7,18 @@ import api.schemas
 router = APIRouter(tags=["boards"])
 
 
-@router.get("/boards/", response_model=list[api.schemas.BoardPublic])
+@router.get("/boards", response_model=list[api.schemas.BoardPublic])
 async def get_owned_boards(current_user: api.dependencies.CurrentUserDep):
     return api.db.get_owned_boards(current_user.id)
 
 
-@router.get("/boards/shared/", response_model=list[api.schemas.BoardPublic])
+@router.get("/boards/shared", response_model=list[api.schemas.BoardPublic])
 async def get_shared_boards(current_user: api.dependencies.CurrentUserDep):
     return api.db.get_shared_boards(current_user.id)
 
 
-@router.post("/boards/", status_code=status.HTTP_201_CREATED, response_model=api.schemas.BoardPublic)
-async def create_board(
-    current_user: api.dependencies.CurrentUserDep,
-    board_create: api.schemas.BoardCreate
-):
+@router.post("/boards", status_code=status.HTTP_201_CREATED, response_model=api.schemas.BoardPublic)
+async def create_board(current_user: api.dependencies.CurrentUserDep, board_create: api.schemas.BoardCreate):
     board = api.db.create_board(current_user, **board_create.model_dump())
 
     api.db.create_column(board, name="To Do")
@@ -47,4 +44,4 @@ async def update_board(
 
 @router.delete("/boards/{board_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_board(board: api.dependencies.BoardOwnerAccessDep, session: api.dependencies.SessionDep) -> None:
-    api.db.delete_board(session, board)
+    api.db.delete_object(session, board)

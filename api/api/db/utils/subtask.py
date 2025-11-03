@@ -40,8 +40,3 @@ def update_subtask(session: Session, subtask: Subtask, **kwargs) -> Subtask:
     session.refresh(subtask)
 
     return subtask
-
-
-def delete_subtask(session: Session, subtask: Subtask) -> None:
-    session.delete(subtask)
-    session.commit()

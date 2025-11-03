@@ -55,8 +55,3 @@ def update_board(session: Session, board: Board, **kwargs) -> Board:
     session.refresh(board)
 
     return board
-
-
-def delete_board(session: Session, board: Board) -> None:
-    session.delete(board)
-    session.commit()

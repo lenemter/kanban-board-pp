@@ -42,8 +42,3 @@ def update_task_comment(session: Session, task_comment: TaskComment, **kwargs) -
     session.refresh(task_comment)
 
     return task_comment
-
-
-def delete_task_comment(session: Session, task_comment: TaskComment) -> None:
-    session.delete(task_comment)
-    session.commit()

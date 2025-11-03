@@ -41,13 +41,13 @@ def validate_new_assignee(board: api.db.Board, assignee_id: int | None) -> api.d
     return assigned_user
 
 
-@router.get("/columns/{column_id}/tasks/", response_model=list[api.schemas.TaskPublic])
+@router.get("/columns/{column_id}/tasks", response_model=list[api.schemas.TaskPublic])
 async def get_tasks(board_and_column: api.dependencies.BoardColumnDep):
     _, column = board_and_column
     return api.db.get_tasks(column)
 
 
-@router.post("/columns/{column_id}/tasks/", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskPublic)
+@router.post("/columns/{column_id}/tasks", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskPublic)
 async def add_task(
     board_and_column: api.dependencies.BoardColumnDep,
     task_create: api.schemas.TaskCreate,
@@ -103,7 +103,7 @@ async def delete_task(
     session: api.dependencies.SessionDep,
 ):
     _, _, task = board_column_and_task
-    api.db.delete_task(session, task)
+    api.db.delete_object(session, task)
 
 
 @router.post("/tasks/{task_id}/tags", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskTagPublic)

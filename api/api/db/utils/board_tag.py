@@ -40,8 +40,3 @@ def update_board_tag(session: Session, tag: BoardTag, **kwargs) -> BoardTag:
     session.refresh(tag)
 
     return tag
-
-
-def delete_board_tag(session: Session, tag: BoardTag) -> None:
-    session.delete(tag)
-    session.commit()

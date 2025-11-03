@@ -12,15 +12,8 @@ async def get_board_tags(board: api.dependencies.BoardViewAccessDep):
     return api.db.get_board_tags(board)
 
 
-@router.post(
-    "/boards/{board_id}/tags",
-    status_code=status.HTTP_201_CREATED,
-    response_model=api.schemas.BoardTagPublic
-)
-async def create_tag(
-    board: api.dependencies.BoardCollaboratorAccessDep,
-    board_tag_create: api.schemas.BoardTagCreate
-):
+@router.post("/boards/{board_id}/tags", status_code=status.HTTP_201_CREATED, response_model=api.schemas.BoardTagPublic)
+async def create_tag(board: api.dependencies.BoardCollaboratorAccessDep, board_tag_create: api.schemas.BoardTagCreate):
     return api.db.create_board_tag(board, **board_tag_create.model_dump())
 
 
@@ -41,6 +34,9 @@ async def update_tag(
 
 
 @router.delete("/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_tag(board_and_tag: api.dependencies.BoardTagCollaboratorDep, session: api.dependencies.SessionDep) -> None:
+async def delete_tag(
+    board_and_tag: api.dependencies.BoardTagCollaboratorDep,
+    session: api.dependencies.SessionDep
+) -> None:
     _, tag = board_and_tag
-    api.db.delete_board_tag(session, tag)
+    api.db.delete_object(session, tag)

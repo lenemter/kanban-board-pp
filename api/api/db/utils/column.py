@@ -47,8 +47,3 @@ def update_column(session: Session, column: Column, **kwargs) -> Column:
     session.refresh(column)
 
     return column
-
-
-def delete_column(session: Session, column: Column) -> None:
-    session.delete(column)
-    session.commit()

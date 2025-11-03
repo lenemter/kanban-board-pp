@@ -19,6 +19,21 @@ def get_owned_boards(user_id: int | None) -> list[Board]:
         )
 
 
+def get_shared_boards(user_id: int | None) -> list[Board]:
+    from .. import engine, Board, BoardUserAccess
+
+    with Session(engine) as session:
+        shared = list(
+            session.exec(
+                select(Board)
+                .join(BoardUserAccess)
+                .where(BoardUserAccess.user_id == user_id)
+            ).all()
+        )
+
+        return get_owned_boards(user_id) + shared
+
+
 def create_board(owner: User, **kwargs) -> Board:
     from .. import engine, Board
 

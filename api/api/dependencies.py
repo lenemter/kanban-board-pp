@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 import api.db
 
@@ -51,7 +51,7 @@ CurrentUserDep = Annotated[api.db.User, Depends(get_current_user)]
 # -- Board ---
 
 
-def owner_get_board(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
+def board_if_owned_by_user(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
     board = session.get(api.db.Board, board_id)
     if board is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
@@ -61,19 +61,77 @@ def owner_get_board(board_id: int, current_user: CurrentUserDep, session: Sessio
     return board
 
 
-BoardOwnerAccessDep = Annotated[api.db.Board, Depends(owner_get_board)]
-
-# --- Column ---
-
-
-def user_get_board(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
+def board_if_user_collaborator(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
     board = session.get(api.db.Board, board_id)
     if board is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
-    if not board.owner_id == current_user.id:
+
+    if board.owner_id == current_user.id:
+        return board
+
+    board_user_access = session.exec(
+        select(api.db.BoardUserAccess).where(
+            api.db.BoardUserAccess.board_id == board.id,
+            api.db.BoardUserAccess.user_id == current_user.id
+        )
+    ).first()
+
+    if board_user_access is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
 
     return board
+
+
+def board_if_accessible_by_user(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
+    board = session.get(api.db.Board, board_id)
+    if board is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
+
+    if board.is_public:
+        return board
+
+    return board_if_user_collaborator(board_id, current_user, session)
+
+
+BoardOwnerAccessDep = Annotated[api.db.Board, Depends(board_if_owned_by_user)]
+BoardCollaboratorAccessDep = Annotated[api.db.Board, Depends(board_if_user_collaborator)]
+BoardViewAccessDep = Annotated[api.db.Board, Depends(board_if_accessible_by_user)]
+
+# --- Board Tag ---
+
+
+def get_board_and_tag_collaborator(
+    current_user: CurrentUserDep,
+    tag_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.BoardTag]:
+    tag = session.get(api.db.BoardTag, tag_id)
+    if tag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
+
+    board = board_if_user_collaborator(tag.board_id, current_user, session)
+
+    return board, tag
+
+
+def get_board_and_tag_view(
+    current_user: CurrentUserDep,
+    tag_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.BoardTag]:
+    tag = session.get(api.db.BoardTag, tag_id)
+    if tag is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
+
+    board = board_if_accessible_by_user(tag.board_id, current_user, session)
+
+    return board, tag
+
+
+BoardTagCollaboratorDep = Annotated[tuple[api.db.Board, api.db.BoardTag], Depends(board_if_user_collaborator)]
+BoardTagViewDep = Annotated[tuple[api.db.Board, api.db.BoardTag], Depends(get_board_and_tag_view)]
+
+# --- Column ---
 
 
 def get_board_and_column(
@@ -85,31 +143,12 @@ def get_board_and_column(
     if column is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Column not found")
 
-    board = user_get_board(column.board_id, current_user, session)
+    board = board_if_accessible_by_user(column.board_id, current_user, session)
 
     return board, column
 
 
 BoardColumnDep = Annotated[tuple[api.db.Board, api.db.Column], Depends(get_board_and_column)]
-
-# --- Board Tag ---
-
-
-def get_board_and_tag(
-    current_user: CurrentUserDep,
-    tag_id: int,
-    session: SessionDep
-) -> tuple[api.db.Board, api.db.BoardTag]:
-    tag = session.get(api.db.BoardTag, tag_id)
-    if tag is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Tag not found")
-
-    board = owner_get_board(tag.board_id, current_user, session)
-
-    return board, tag
-
-
-BoardTagDep = Annotated[tuple[api.db.Board, api.db.BoardTag], Depends(get_board_and_tag)]
 
 # --- Task ---
 

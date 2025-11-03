@@ -17,7 +17,7 @@ def validate_position(board: api.db.Board, new_position: int):
 
 
 @router.get("/boards/{board_id}/columns/", response_model=list[api.schemas.ColumnPublic])
-async def get_columns(board: api.dependencies.BoardOwnerAccessDep):
+async def get_columns(board: api.dependencies.BoardViewAccessDep):
     return api.db.get_columns(board)
 
 
@@ -26,7 +26,7 @@ async def get_columns(board: api.dependencies.BoardOwnerAccessDep):
     status_code=status.HTTP_201_CREATED,
     response_model=api.schemas.ColumnPublic
 )
-async def create_column(board: api.dependencies.BoardOwnerAccessDep, column_create: api.schemas.ColumnCreate):
+async def create_column(board: api.dependencies.BoardCollaboratorAccessDep, column_create: api.schemas.ColumnCreate):
     return api.db.create_column(board, **column_create.model_dump())
 
 

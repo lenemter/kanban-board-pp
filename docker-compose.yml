@@ -8,6 +8,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  
+  tests:
+    build: api/
+    volumes:
+      - .:/api
+    command: pytest -v
 
   db:
     image: postgres:18.0
@@ -15,7 +21,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     secrets:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
@@ -28,6 +34,7 @@ services:
       interval: 5s
       retries: 5
       timeout: 3s
+  
 
 volumes:
   postgres_data:

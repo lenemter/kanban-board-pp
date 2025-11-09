@@ -17,13 +17,13 @@ async def create_tag(board: api.dependencies.BoardCollaboratorAccessDep, board_t
     return api.db.create_board_tag(board, **board_tag_create.model_dump())
 
 
-@router.get("/tags/{tag_id}", response_model=api.schemas.BoardTagPublic)
+@router.get("/board-tags/{tag_id}", response_model=api.schemas.BoardTagPublic)
 async def get_tag(board_and_tag: api.dependencies.BoardTagViewDep):
     _, tag = board_and_tag
     return tag
 
 
-@router.patch("/tags/{tag_id}", response_model=api.schemas.BoardTagPublic)
+@router.patch("/board-tags/{tag_id}", response_model=api.schemas.BoardTagPublic)
 async def update_tag(
     board_and_tag: api.dependencies.BoardTagCollaboratorDep,
     tag_update: api.schemas.BoardTagUpdate,
@@ -33,7 +33,7 @@ async def update_tag(
     return api.db.update_board_tag(session, tag, **tag_update.model_dump(exclude_unset=True))
 
 
-@router.delete("/tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/board-tags/{tag_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tag(
     board_and_tag: api.dependencies.BoardTagCollaboratorDep,
     session: api.dependencies.SessionDep

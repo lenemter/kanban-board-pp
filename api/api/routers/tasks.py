@@ -91,7 +91,7 @@ async def update_task(
     if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.position != task.position:
         validate_new_position(column, task_update.position)
 
-    if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.title != task.title:
+    if not isinstance(task_update.title, api.schemas.UnsetType) and task_update.title != task.title:
         api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
 
     return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
@@ -113,3 +113,12 @@ async def add_task_tag(
 ):
     _, _, task = board_column_and_task
     return api.db.create_task_tag(task, **task_tag_create.model_dump(exclude_unset=True))
+
+
+@router.delete("/task-tags/{task_tag_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task_tag(
+    board_column_task_tag: api.dependencies.BoardColumnTaskTagDep,
+    session: api.dependencies.SessionDep,
+):
+    _, _, _, task_tag = board_column_task_tag
+    api.db.delete_object(session, task_tag)

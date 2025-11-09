@@ -1,3 +1,4 @@
+import os
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -29,8 +30,11 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> api
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    secret_key = os.getenv("SECRET_KEY")
+    assert secret_key is not None
+
     try:
-        payload = jwt.decode(token, api.utils.read_secret("SECRET_KEY"), algorithms=[api.utils.HASH_ALGORITHM])
+        payload = jwt.decode(token, secret_key, algorithms=[api.utils.HASH_ALGORITHM])
         email = payload.get("sub")
         if email is None:
             raise credentials_exception

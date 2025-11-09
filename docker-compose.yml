@@ -37,5 +37,3 @@ secrets:
     file: ./secrets/POSTGRES_USER
   POSTGRES_PASSWORD:
     file: ./secrets/POSTGRES_PASSWORD
-  SECRET_KEY:
-    file: ./secrets/SECRET_KEY

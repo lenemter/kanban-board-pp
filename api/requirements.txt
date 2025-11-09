@@ -1,6 +1,8 @@
 fastapi[standard]
+fastapi-mail
 bcrypt
 psycopg2-binary
 pyjwt
 python-dotenv
 sqlmodel
+tenacity

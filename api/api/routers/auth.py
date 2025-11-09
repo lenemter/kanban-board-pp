@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta, timezone
+import os
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 import jwt
 import bcrypt
 
 import api.db
+from api.mail_utils import send_registered_email
 import api.schemas
 import api.utils
 
@@ -35,7 +37,10 @@ def create_access_token(data: dict, expires_delta: timedelta) -> api.schemas.Tok
     to_encode = data.copy()
     to_encode.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(to_encode, api.utils.read_secret("SECRET_KEY"), algorithm=api.utils.HASH_ALGORITHM)
+    secret_key = os.getenv("SECRET_KEY")
+    assert secret_key is not None
+
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=api.utils.HASH_ALGORITHM)
 
     return api.schemas.Token(access_token=encoded_jwt, token_type="bearer")
 
@@ -57,7 +62,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(user_create: api.schemas.UserCreate) -> api.schemas.Token:
+async def register(background_tasks: BackgroundTasks, user_create: api.schemas.UserCreate) -> api.schemas.Token:
     if api.db.get_user_by_email(user_create.email) is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Username already taken")
 
@@ -66,6 +71,8 @@ async def register(user_create: api.schemas.UserCreate) -> api.schemas.Token:
         hashed_password=api.utils.get_password_hash(user_create.password),
         name=user_create.name,
     )
+
+    background_tasks.add_task(send_registered_email, new_user)
 
     return create_access_token(
         data={"sub": new_user.email},

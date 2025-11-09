@@ -2,6 +2,7 @@ import bcrypt
 
 
 HASH_ALGORITHM = "HS256"
+PREFIX = "/api/v1"
 
 
 def read_secret(secret_name: str) -> str | None:

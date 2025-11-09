@@ -5,6 +5,8 @@ services:
       - "8000:8000"
     volumes:
       - .:/api
+    env_file:
+      - ./api/.env
     depends_on:
       db:
         condition: service_healthy
@@ -15,7 +17,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     secrets:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
@@ -28,6 +30,13 @@ services:
       interval: 5s
       retries: 5
       timeout: 3s
+  
+  frontend:
+    build: ./frontend
+    ports:
+    - "5173:5173"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

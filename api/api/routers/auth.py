@@ -2,13 +2,14 @@ from datetime import datetime, timedelta, timezone
 import os
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 import jwt
 import bcrypt
 
 import api.db
-from api.mail_utils import send_registered_email
+import api.dependencies
+from api.mail_utils import send_verification_email
 import api.schemas
 import api.utils
 
@@ -55,6 +56,9 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    if not user.is_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email before logging in")
+
     return create_access_token(
         data={"sub": user.email},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -62,9 +66,13 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(background_tasks: BackgroundTasks, user_create: api.schemas.UserCreate) -> api.schemas.Token:
+async def register(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user_create: api.schemas.UserCreate
+) -> None:
     if api.db.get_user_by_email(user_create.email) is not None:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Username already taken")
+        raise HTTPException(status.HTTP_409_CONFLICT, "Email already taken")
 
     new_user = api.db.register_user(
         email=user_create.email,
@@ -72,9 +80,40 @@ async def register(background_tasks: BackgroundTasks, user_create: api.schemas.U
         name=user_create.name,
     )
 
-    background_tasks.add_task(send_registered_email, new_user)
+    base_url = str(request.base_url).rstrip("/")
+    background_tasks.add_task(send_verification_email, base_url, new_user)
 
-    return create_access_token(
-        data={"sub": new_user.email},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
+
+@router.get("/verify/{token}", status_code=status.HTTP_200_OK)
+def verify_email(token: str, session: api.dependencies.SessionDep) -> dict:
+
+    user = api.db.get_user_by_verification_token(session, token)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+
+    api.db.verify_user(session, user)
+
+    return {"message": "Email verified successfully!"}
+
+
+@router.get("/resend-verification", status_code=status.HTTP_200_OK)
+def resend_verification(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    request: Request,
+    background_tasks: BackgroundTasks
+) -> dict:
+    user = authenticate_user(form_data.username, form_data.password)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if user.is_verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already verified")
+
+    base_url = str(request.base_url).rstrip("/")
+    background_tasks.add_task(send_verification_email, base_url, user)
+
+    return {"message": "Verification email resent successfully"}

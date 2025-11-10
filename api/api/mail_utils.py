@@ -6,6 +6,7 @@ from pydantic import NameEmail, SecretStr
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from api.db.models.user import User
+import api.utils
 
 mail_username = os.getenv("MAIL_USERNAME")
 _mail_password = os.getenv("MAIL_PASSWORD")
@@ -54,5 +55,11 @@ async def send_mail(to: NameEmail, subject: str, body: str) -> None:
         raise
 
 
-async def send_registered_email(user: User) -> None:
-    await send_mail(NameEmail(user.name, user.email), "Confirm your account", "Not implemented yet")
+async def send_verification_email(base_url: str, user: User) -> None:
+    verification_link = f"{base_url}{api.utils.PREFIX}/verify/{user.verification_token}"
+
+    await send_mail(
+        NameEmail(user.name, user.email),
+        "Confirm your account",
+        f"Click this link to verify your email: {verification_link}"
+    )

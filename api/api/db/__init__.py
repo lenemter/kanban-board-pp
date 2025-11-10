@@ -8,7 +8,7 @@ from .models.task import Task, TaskTag
 from .models.task_comments import TaskComment
 from .models.subtask import Subtask
 from .utils.commons import delete_object
-from .utils.user import get_user_by_id, get_user_by_email, register_user, update_user
+from .utils.user import get_user_by_id, get_user_by_email, get_user_by_verification_token, register_user, update_user, verify_user
 from .utils.board import get_owned_boards, get_shared_boards, create_board, update_board, add_user_to_board, get_board_user_access
 from .utils.board_tag import get_board_tags, create_board_tag, update_board_tag
 from .utils.column import get_column_by_id, get_columns, create_column, update_column
@@ -27,7 +27,7 @@ __all__ = [
     "TaskComment",
     "Subtask",
     "delete_object",
-    "get_user_by_id", "get_user_by_email", "register_user", "update_user",
+    "get_user_by_id", "get_user_by_email", "get_user_by_verification_token", "register_user", "update_user", "verify_user",
     "get_owned_boards", "get_shared_boards", "create_board", "update_board", "add_user_to_board", "get_board_user_access",
     "get_board_tags", "create_board_tag", "update_board_tag",
     "get_column_by_id", "get_columns", "create_column", "update_column",

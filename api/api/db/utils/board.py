@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from sqlmodel import Session, select
 
 if TYPE_CHECKING:
-    from .. import Board, User
+    from .. import Board, BoardUserAccess, User
 
 
 def get_owned_boards(user_id: int | None) -> list[Board]:
@@ -55,3 +55,20 @@ def update_board(session: Session, board: Board, **kwargs) -> Board:
     session.refresh(board)
 
     return board
+
+
+def add_user_to_board(session: Session, board: Board, user: User) -> BoardUserAccess:
+    from .. import BoardUserAccess
+
+    assert board.id is not None and user.id is not None
+
+    board_user_access = BoardUserAccess(board_id=board.id, user_id=user.id)
+    session.add(board_user_access)
+    session.commit()
+    session.refresh(board_user_access)
+
+    return board_user_access
+
+
+def get_board_user_access(session: Session, board: Board, user: User) -> BoardUserAccess | None:
+    return session.get(BoardUserAccess, (board.id, user.id))

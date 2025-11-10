@@ -18,13 +18,11 @@ def validate_new_column(board: api.db.Board, new_column_id: int) -> api.db.Colum
     return new_column
 
 
-def validate_new_position(column: api.db.Column, new_position: int):
+def validate_new_position(column: api.db.Column, new_position: int) -> None:
     if new_position < 0:
         raise HTTPException(status.HTTP_409_CONFLICT, "Position must be greater or equal 0")
-
-    for task in api.db.get_tasks(column):
-        if task.position == new_position:
-            raise HTTPException(status.HTTP_409_CONFLICT, "This position is already taken")
+    if new_position >= len(api.db.get_tasks(column)):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Position is out of bounds")
 
 
 def validate_new_assignee(board: api.db.Board, assignee_id: int | None) -> api.db.User | None:
@@ -88,13 +86,23 @@ async def update_task(
         if new_assignee is not None:
             api.db.create_task_comment(task, None, content=f"Assigned {new_assignee.name}")
 
-    if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.position != task.position:
-        validate_new_position(column, task_update.position)
-
     if not isinstance(task_update.title, api.schemas.UnsetType) and task_update.title != task.title:
         api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
 
-    return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
+    if not isinstance(task_update.position, api.schemas.UnsetType) and task_update.position != task.position:
+        # we treat new position as a position to insert into
+        # so we need to move tasks after new position and before last position to position + 1
+
+        validate_new_position(column, task_update.position)
+        api.db.insert_task_to_position(session, task, column, task_update.position)
+
+    task_update_dump = task_update.model_dump(exclude_unset=True)
+    try:
+        task_update_dump.pop("column")
+    except KeyError:
+        pass
+
+    return api.db.update_task(session, task, **task_update_dump)
 
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -17,7 +17,9 @@
     box-sizing: border-box;
 }
 
-/* Шрифт, структура и фон сайта */
+/* ======================================= */
+/* Шрифт, фон и структура сайта */
+/* ======================================= */
 body,
 html,
 #root {
@@ -187,7 +189,9 @@ html,
     color: var(--muted);
 }
 
-/* Карточки для тасков */
+/* ======================================= */
+/* Карточки */
+/* ======================================= */
 .card {
   background: var(--card);
   border-radius: 12px;
@@ -284,7 +288,9 @@ html,
     color: #E76678
 }
 
-/* modal */
+/* ======================================= */
+/*            Модальные окна               */
+/* ======================================= */
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -450,7 +456,9 @@ html,
     cursor: pointer
 }
 
-/* Список досок */
+/* ======================================= */
+/*            Список досок                 */
+/* ======================================= */
 .boards-section {
     display: flex;
     flex-direction: column;
@@ -656,6 +664,130 @@ html,
     accent-color: var(--accent);
 }
 
+.menu-footer {
+  display: flex;
+}
+
+.logout-btn {
+  margin-left: auto;
+}
+
+/* ======================================= */
+/*            Аутентификация               */
+/* ======================================= */
+
+/* Контейнер для страницы аутентификации */
+.auth-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Фиксируем на высоте экрана */
+  width: 100vw;
+  background: linear-gradient(135deg, #1e2a47 0%, #0d1117 100%); 
+  overflow: hidden; 
+}
+
+/* Стилизация карточки входа */
+.auth-modal {
+  background: var(--panel);
+  padding: 40px;
+  border-radius: 16px;
+  min-width: 380px;
+  max-width: 450px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  text-align: center;
+  transition: transform 0.3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 20px 0;
+}
+
+.auth-modal:hover {
+    transform: translateY(-2px);
+}
+
+/* Заголовок */
+.auth-modal h3 {
+  margin-top: 0;
+  margin-bottom: 30px;
+  font-size: 28px; /* Увеличим размер */
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Форма и поля */
+.auth-modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-modal label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-top: 8px; 
+  font-size: 14px;
+}
+
+.auth-modal input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-stroke);
+  background: var(--background);
+  color: var(--text);
+  font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-modal input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(97, 189, 255, 0.3);
+}
+
+/* Стили кнопки 'Log In' / 'Sign Up' */
+.auth-modal .btn-primary {
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 15px;
+}
+
+/* Контейнер для кнопок входа и переключения */
+.modal-actions-col {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Ссылка переключения вида (Login <-> Register) */
+.auth-modal .btn-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+  padding: 8px;
+}
+
+.auth-modal .btn-link:hover {
+  color: var(--text);
+}
+
+.auth-modal .error-message {
+  color: #ff6b6b;
+  margin-top: 10px;
+  font-size: 14px;
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 10px;
+  border-radius: 6px;
+}
 
 
 @media (max-width:900px) {

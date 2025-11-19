@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // <-- Импортируем useEffect
 // Компоненты
 import Board from './components/Board';
 import CreateTaskModal from './components/CreateTaskModal';
@@ -6,8 +6,11 @@ import EditTaskModal from './components/EditTaskModal';
 import AccountMenu from './components/AccountMenu';
 import AddUserModal from './components/AddUserModal';
 // Прочее
-import { initialBoard } from './utils/sampleData'; // Данные
-import { UserPlus, ChevronUp, ChevronDown } from 'lucide-react'; // Иконки
+import { initialBoard } from './utils/sampleData';
+import { UserPlus, ChevronUp, ChevronDown, LogOut } from 'lucide-react'; // <-- LogOut добавлен
+// Страница аутентификации и API клиент
+import AuthPage from './components/AuthPage';
+import apiClient from './api';
 
 // Временные данные для сайдбара
 const mockBoards = [
@@ -17,23 +20,60 @@ const mockBoards = [
 ];
 
 function App() {
+  // Проверяем наличие токена при инициализации
+  const [isLoggedIn, setIsLoggedIn] = useState(!!apiClient.token);
+  const [loadingInitial, setLoadingInitial] = useState(false); 
+
   const [board, setBoard] = useState(initialBoard);
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [showAccount, setShowAccount] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
-  // Состояние для модального окна выбора исполнителя (для CreateTaskModal)
   const [assigneeCallback, setAssigneeCallback] = useState(null);
-  const [showBoardsMenu, setShowBoardsMenu] = useState(true); // Для управления выпадающим списком
+  const [showBoardsMenu, setShowBoardsMenu] = useState(true);
 
-  // Для бекенда
+  
+
+  // <-- useEffect для проверки токена при загрузке приложения
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Можно добавить запрос к /users/me для проверки валидности токена
+      if (apiClient.token) {
+        try {
+          await apiClient.getUserMe(); // Раскомментировать для проверки токена
+          setIsLoggedIn(true);
+        } catch (e) {
+          console.error("Token invalid, logging out:", e);
+          handleLogout(); 
+        }
+      }
+      setLoadingInitial(false);
+    };
+
+    if (apiClient.token) {
+        setLoadingInitial(true);
+        checkAuth();
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
+  
+
+  const handleLogout = () => {
+    apiClient.clearToken(); // Удаление токена из localStorage
+    setIsLoggedIn(false);
+    setShowAccount(false);
+  };
+
   const handleOpenCreate = (columnId) => {
     setShowCreate(true);
   };
 
   const handleCreate = (columnId, card) => {
-    // локальное создание
     const id = `card-${Date.now()}`;
     const newCard = { id, ...card };
     const nb = { ...board };
@@ -60,7 +100,6 @@ function App() {
 
   const handleMoveLocal = (newBoard) => setBoard(newBoard);
 
-  // Логика для открытия модалки AddUserModal и установки callback
   const handleOpenAddUserModal = (callback) => {
     setAssigneeCallback(() => callback);
     setShowAddUser(true);
@@ -72,6 +111,17 @@ function App() {
   };
 
 
+  // Условный рендеринг
+  if (loadingInitial) {
+    return <div className="loading-screen">Loading...</div>;
+  }
+  
+  // Если пользователь не вошел, показываем только страницу аутентификации
+  if (!isLoggedIn) {
+    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Если вошел, показываем доску
   return (
     <div className="app-root">
       <aside className="sidebar">
@@ -135,18 +185,23 @@ function App() {
       )}
 
       {showEdit && editingCard && (
-        <EditTaskModal card={editingCard} onClose={() => setShowEdit(false)} onSave={handleSaveEdit} />
-      )}
-
-      {showAccount && (
-        <AccountMenu onClose={() => setShowAccount(false)} onOpenAddUser={() => setShowAddUser(true)} />
-      )}
-
-      {showAddUser && (
-        <AddUserModal
-          onClose={handleCloseAddUserModal}
-          onSelectAssignee={assigneeCallback}
+        <EditTaskModal
+          card={editingCard}
+          onClose={() => setShowEdit(false)}
+          onSave={handleSaveEdit}
         />
+      )}
+
+      {/* Передаем функцию выхода в AccountMenu */}
+      {showAccount && (
+        <AccountMenu
+          onClose={() => setShowAccount(false)}
+          onOpenAddUser={() => setShowAddUser(true)}
+          onLogout={handleLogout}
+        />
+      )}
+      {showAddUser && (
+        <AddUserModal onClose={handleCloseAddUserModal} onSelectAssignee={assigneeCallback} />
       )}
     </div>
   );

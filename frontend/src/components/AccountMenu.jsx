@@ -1,36 +1,44 @@
 import React, { useState } from 'react';
+import { User, UserPlus, LogOut } from 'lucide-react';
 
-function AccountMenu({ onClose }) {
+function AccountMenu({ onClose, onOpenAddUser, onLogout }) {
     const [username, setUsername] = useState('SanyGame');
     const [email, setEmail] = useState('priupolin5443@yandex.ru');
 
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    
+    /**
+     * Меню аккаунта пользователя
+     * @param {function} onClose
+     * @param {function} onOpenAddUser
+     * @param {function} onLogout
+     */
 
     const handleSaveGeneralInfo = () => {
-        // Здесь будет логика для сохранения общей информации (username, email)
+        // TODO: логика для сохранения общей информации (username, email)
         console.log('Saving General Information:', { username, email });
         // Здесь сделать вызов API
         alert('General Information saved!');
     };
 
     const handleSavePassword = () => {
-        // Здесь будет логика для смены пароля
+        // TODO: логика для смены пароля
         if (!currentPassword || !newPassword || !confirmNewPassword) {
-            alert('Пожалуйста, заполните все поля для смены пароля.');
+            alert('Please fill in all fields for changing the password.');
             return;
         }
         if (newPassword !== confirmNewPassword) {
-            alert('Новый пароль и его подтверждение не совпадают.');
+            alert('New password and its confirmation do not match.');
             return;
         }
         if (newPassword.length < 6) { // Пример валидации
-            alert('Новый пароль должен быть не менее 6 символов.');
+            alert('New password must be at least 6 characters long.');
             return;
         }
         console.log('Changing Password:', { currentPassword, newPassword });
-        // Здесь сделать вызов API
+        // TODO: сделать вызов API
         alert('Password changed successfully!');
         // Очистка полей
         setCurrentPassword('');
@@ -91,6 +99,11 @@ function AccountMenu({ onClose }) {
                     <div className="modal-actions-col">
                         <button className="btn" onClick={handleSavePassword}>Save Changes</button>
                     </div>
+                </div>
+                <div className="menu-footer">
+                    <button className="menu-item btn-link logout-btn" onClick={onLogout}>
+                        <LogOut size={18} /> Log Out
+                    </button>
                 </div>
             </div>
         </div>

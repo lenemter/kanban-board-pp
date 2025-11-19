@@ -10,6 +10,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  
+  tests:
+    build: api/
+    volumes:
+      - .:/api
+    command: pytest -v
 
   db:
     image: postgres:18.0

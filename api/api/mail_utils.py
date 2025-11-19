@@ -8,6 +8,8 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 from api.db.models.user import User
 import api.utils
 
+conf: ConnectionConfig | None = None
+
 mail_username = os.getenv("MAIL_USERNAME")
 _mail_password = os.getenv("MAIL_PASSWORD")
 mail_server = os.getenv("MAIL_SERVER")
@@ -44,6 +46,9 @@ if mail_support:
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 async def send_mail(to: NameEmail, subject: str, body: str) -> None:
+    if conf == None:
+        return
+
     message = MessageSchema(
         recipients=[to],
         subject=subject,

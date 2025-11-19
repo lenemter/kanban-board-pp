@@ -1,15 +1,19 @@
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 class ApiClient {
+  constructor(baseURL = API_BASE_URL) {
+    this.baseURL = baseURL;
+    this.token = localStorage.getItem('authToken'); 
+  }
 
   setToken(token) {
     this.token = token;
-    localStorage.setItem('access_token', token);
+    localStorage.setItem('authToken', token);
   }
 
   clearToken() {
     this.token = null;
-    localStorage.removeItem('access_token');
+    localStorage.removeItem('authToken');
   }
 
   async request(endpoint, options = {}) {
@@ -47,43 +51,46 @@ class ApiClient {
     }
   }
 
-constructor(baseURL = API_BASE_URL) {
-  this.baseURL = baseURL;
-  this.token = localStorage.getItem('authToken'); 
-}
-
   // Auth
-  async login(username, password) {
-    const formData = new URLSearchParams();
-    formData.append('username', username);
-    formData.append('password', password);
-
-    const data = await this.request('/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-      skipAuth: true,
+  async login(email, password) {
+    // Используем правильный путь: /token
+    const url = `${this.baseURL}/token`;
+    
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ 
+            username: email, 
+            password: password 
+        }),
     });
+    
+    if (!response.ok) {
+        // Улучшенная обработка ошибок
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Вход не удался. Проверьте почту и пароль.');
+    }
 
-    this.setToken(data.access_token);
+    const data = await response.json();
+    // Сохраняем токен, ключ которого в ответе access_token
+    this.setToken(data.access_token); 
     return data;
   }
 
   async register(email, name, password) {
-    return this.request('/register', {
+    const url = `${this.baseURL}/users/register`;
+    
+    const response = await fetch(url, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, password }),
-      skipAuth: true,
     });
-  }
 
-  async verifyEmail(token) {
-    return this.request(`/verify/${token}`, {
-      method: 'GET',
-      skipAuth: true,
-    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Ошибка при регистрации.');
+    }
+    return await response.json();
   }
 
   clearToken() {

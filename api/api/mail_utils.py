@@ -6,6 +6,7 @@ from pydantic import NameEmail, SecretStr
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from api.db.models.user import User
+import api.utils
 
 conf: ConnectionConfig | None = None
 
@@ -13,25 +14,28 @@ mail_username = os.getenv("MAIL_USERNAME")
 _mail_password = os.getenv("MAIL_PASSWORD")
 mail_server = os.getenv("MAIL_SERVER")
 _mail_port = os.getenv("MAIL_PORT")
-if (
-    mail_username is None or
-    _mail_password is None or
-    mail_server is None or
-    _mail_port is None
-):
-    pass
-else:
-    mail_password = SecretStr(_mail_password)
-    mail_port = int(_mail_port)
+
+mail_support = (
+    mail_username is not None and
+    _mail_password is not None and
+    mail_server is not None and
+    _mail_port is not None
+)
+
+print(f"MAIL SUPPORT {mail_support}")
+
+if mail_support:
+    mail_password = SecretStr(_mail_password)  # type: ignore
+    mail_port = int(_mail_port)  # type: ignore
 
     del _mail_password
     del _mail_port
 
     conf = ConnectionConfig(
-        MAIL_USERNAME=mail_username,
+        MAIL_USERNAME=mail_username,  # type: ignore
         MAIL_PASSWORD=mail_password,
         MAIL_FROM="noreply@owouwukanban.ru",
-        MAIL_SERVER=mail_server,
+        MAIL_SERVER=mail_server,  # type: ignore
         MAIL_PORT=mail_port,
         MAIL_STARTTLS=True,
         MAIL_SSL_TLS=False,
@@ -60,5 +64,11 @@ async def send_mail(to: NameEmail, subject: str, body: str) -> None:
         raise
 
 
-async def send_registered_email(user: User) -> None:
-    await send_mail(NameEmail(user.name, user.email), "Confirm your account", "Not implemented yet")
+async def send_verification_email(base_url: str, user: User) -> None:
+    verification_link = f"{base_url}{api.utils.PREFIX}/verify/{user.verification_token}"
+
+    await send_mail(
+        NameEmail(user.name, user.email),
+        "Confirm your account",
+        f"Click this link to verify your email: {verification_link}"
+    )

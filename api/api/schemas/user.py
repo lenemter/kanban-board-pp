@@ -6,6 +6,7 @@ from .unset_type import Unset, UnsetType
 class UserPublic(BaseModel):
     id: int
     email: str
+    is_verified: bool
 
 
 class UserCreate(BaseModel):

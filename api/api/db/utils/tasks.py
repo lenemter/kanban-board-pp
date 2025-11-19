@@ -42,6 +42,21 @@ def update_task(session: Session, task: Task, **kwargs) -> Task:
     return task
 
 
+def insert_task_to_position(session: Session, task: Task, column: Column, new_position: int) -> Task:
+    tasks = get_tasks(column)
+    tasks.sort(key=lambda t: t.position)
+    for i in range(min(task.position,  new_position), max(task.position, new_position)):
+        tasks[i].position += 1
+        session.merge(tasks[i])
+
+    task.position = new_position
+    session.merge(task)
+    session.commit()
+    session.refresh(task)
+
+    return task
+
+
 def create_task_tag(task: Task, **kwargs) -> TaskTag:
     from .. import engine, TaskTag
 

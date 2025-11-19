@@ -1,5 +1,6 @@
 from .user import UserCreate, UserPublic, UserUpdate
 from .board import BoardCreate, BoardPublic, BoardUpdate
+from .board_user_access import BoardUserAccessPublic
 from .board_tag import BoardTagCreate, BoardTagPublic, BoardTagUpdate
 from .column import ColumnCreate, ColumnPublic, ColumnUpdate
 from .task import TaskCreate, TaskPublic, TaskUpdate
@@ -12,6 +13,7 @@ from .unset_type import UnsetType, Unset
 __all__ = [
     "UserCreate", "UserPublic", "UserUpdate",
     "BoardCreate", "BoardPublic", "BoardUpdate",
+    "BoardUserAccessPublic",
     "BoardTagCreate", "BoardTagPublic", "BoardTagUpdate",
     "ColumnCreate", "ColumnPublic", "ColumnUpdate",
     "TaskCreate", "TaskPublic", "TaskUpdate",

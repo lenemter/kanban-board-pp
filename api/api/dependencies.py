@@ -20,7 +20,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 # --- User Validation ---
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{api.utils.PREFIX}/token")
 
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> api.db.User:

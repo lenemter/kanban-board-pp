@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 
 import api.db
 import api.dependencies
@@ -45,3 +45,33 @@ async def update_board(
 @router.delete("/boards/{board_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_board(board: api.dependencies.BoardOwnerAccessDep, session: api.dependencies.SessionDep) -> None:
     api.db.delete_object(session, board)
+
+
+@router.post(
+    "/boards/{board_id}/users",
+    status_code=status.HTTP_201_CREATED,
+    response_model=api.schemas.BoardUserAccessPublic
+)
+def add_user_to_board(board: api.dependencies.BoardOwnerAccessDep, user_id: int, session: api.dependencies.SessionDep):
+    user = api.db.get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't exist")
+
+    return api.db.add_user_to_board(session, board, user)
+
+
+@router.delete("/boards/{board_id}/users", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_user_from_board(
+    board: api.dependencies.BoardOwnerAccessDep,
+    user_id: int,
+    session: api.dependencies.SessionDep
+) -> None:
+    user = api.db.get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't exist")
+
+    board_user_access = api.db.get_board_user_access(session, board, user)
+    if board_user_access is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't have access to this board")
+
+    api.db.delete_object(session, board_user_access)

@@ -9,7 +9,7 @@ import bcrypt
 
 import api.db
 import api.dependencies
-from api.mail_utils import send_verification_email
+from api.mail_utils import mail_support, send_verification_email
 import api.schemas
 import api.utils
 
@@ -69,7 +69,8 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
 async def register(
     request: Request,
     background_tasks: BackgroundTasks,
-    user_create: api.schemas.UserCreate
+    user_create: api.schemas.UserCreate,
+    session: api.dependencies.SessionDep
 ) -> None:
     if api.db.get_user_by_email(user_create.email) is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already taken")
@@ -80,8 +81,11 @@ async def register(
         name=user_create.name,
     )
 
-    base_url = str(request.base_url).rstrip("/")
-    background_tasks.add_task(send_verification_email, base_url, new_user)
+    if mail_support:
+        base_url = str(request.base_url).rstrip("/")
+        background_tasks.add_task(send_verification_email, base_url, new_user)
+    else:
+        api.db.verify_user(session, new_user)
 
 
 @router.get("/verify/{token}", status_code=status.HTTP_200_OK)
@@ -100,7 +104,8 @@ def verify_email(token: str, session: api.dependencies.SessionDep) -> dict:
 def resend_verification(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     request: Request,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    session: api.dependencies.SessionDep
 ) -> dict:
     user = authenticate_user(form_data.username, form_data.password)
     if user is None:
@@ -113,7 +118,10 @@ def resend_verification(
     if user.is_verified:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already verified")
 
-    base_url = str(request.base_url).rstrip("/")
-    background_tasks.add_task(send_verification_email, base_url, user)
+    if mail_support:
+        base_url = str(request.base_url).rstrip("/")
+        background_tasks.add_task(send_verification_email, base_url, user)
+    else:
+        api.db.verify_user(session, user)
 
     return {"message": "Verification email resent successfully"}

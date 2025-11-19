@@ -53,7 +53,6 @@ class ApiClient {
 
   // Auth
   async login(email, password) {
-    // Используем правильный путь: /token
     const url = `${this.baseURL}/token`;
     
     const response = await fetch(url, {
@@ -66,7 +65,6 @@ class ApiClient {
     });
     
     if (!response.ok) {
-        // Улучшенная обработка ошибок
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Вход не удался. Проверьте почту и пароль.');
     }

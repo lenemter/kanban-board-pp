@@ -25,6 +25,8 @@ html,
 #root {
     height: 100%;
     margin: 0;
+    padding: 0;
+    overflow: hidden;
     font-family: 'Roboto', sans-serif;
     background: var(--bg);
     color: var(--text);
@@ -43,7 +45,8 @@ html,
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    border-right: 1px solid rgba(255, 255, 255, 0.02)
+    border-right: 1px solid rgba(255, 255, 255, 0.02);
+    flex-shrink: 0;
 }
 
 .app-title {
@@ -76,15 +79,21 @@ html,
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px
+    padding: 0 20px 0 20px;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .topbar {
     display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 10;
     justify-content: space-between;
     align-items: center;
     padding: 8px 12px;
-    margin-bottom: 12px
+    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .top-left {
@@ -99,12 +108,10 @@ html,
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-
-    /* 🔑 Добавляем Flexbox для выравнивания иконки и текста */
     display: flex; 
     align-items: center;
-    gap: 8px; /* Отступ между иконкой и текстом */
-    font-weight: 600; /* Обычно кнопки имеют жирный шрифт */
+    gap: 8px;
+    font-weight: 600;
 }
 
 .btn.ghost {
@@ -113,8 +120,11 @@ html,
 }
 
 .board-wrap {
-    flex: 1;
-    overflow: auto
+    flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px 0 20px 0;
+    min-height: 0; 
 }
 
 /* Списки тасков */
@@ -122,13 +132,16 @@ html,
     display: flex;
     gap: 18px;
     align-items: flex-start;
+    width: max-content; 
     height: 100%;
+    padding-right: 20px;
 }
 
 .column {
     background: var(--panel);
     width: 320px;
     display: flex;
+    flex-shrink: 0;
     flex-direction: column;
     border-radius: 15px;
     box-shadow: 0 0 0 1px var(--column-stroke);
@@ -144,7 +157,8 @@ html,
     border: none;
     color: var(--muted);
     cursor: pointer;
-    font-size: 18px
+    padding: 5px;
+    line-height: 1;
 }
 
 .column-body {
@@ -173,6 +187,19 @@ html,
     color: #fff;
     margin-left: 5px;
     margin-top: 5px;
+}
+
+.column.add-column {
+    min-width: 300px;
+    width: 300px;
+    background: transparent; 
+    border: 2px dashed rgba(255, 255, 255, 0.1); 
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%; 
+    cursor: pointer;
 }
 
 /* Группировка названия колонки и счетчика для выравнивания */
@@ -298,19 +325,22 @@ html,
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow-y: auto; 
 }
 
 .modal {
     background: var(--panel);
-    padding: 18px;
     border-radius: 10px;
     min-width: 400px;
-    color: var(--text)
+    color: var(--text);
+    display: flex; 
+    flex-direction: column;
+    max-height: 90vh;
+    overflow: hidden;
+    padding: 0px 18px 18px 18px; 
 }
 
 .modal.small {
-    min-width: 260px
+    min-width: 260px;
 }
 
 .modal h3 {
@@ -335,16 +365,11 @@ html,
     color: var(--accent);
 }
 
-.modal input::placeholder {
-  color: var(--muted); 
-  opacity: 0.6;
-  font-weight: 400; 
-}
-
+.modal input::placeholder,
 .modal textarea::placeholder {
-  color: var(--muted); 
-  opacity: 0.6;
-  font-weight: 400; 
+    color: var(--muted); 
+    opacity: 0.6;
+    font-weight: 400; 
 }
 
 .modal textarea {
@@ -369,8 +394,13 @@ html,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    flex-shrink: 0;
+    padding-top: 18px;
+    padding-bottom: 10px;
+    position: relative;
+    z-index: 10;
 }
+
 .modal-title {
     margin: 0;
     font-weight: 600;
@@ -389,6 +419,15 @@ html,
     color: var(--muted);
     font-size: 13px;
     font-weight: 500;
+}
+
+.account-content-scroll,
+.modal-content-scroll {
+    flex-grow: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
+    padding-bottom: 20px;
 }
 
 .user-list-container {
@@ -514,8 +553,6 @@ html,
 .task-details-modal {
     min-width: 500px;
     max-width: 650px;
-    padding: 20px;
-    overflow-y: auto; 
 }
 
 .task-title-input {
@@ -665,11 +702,15 @@ html,
 }
 
 .menu-footer {
-  display: flex;
+    display: flex;
+    flex-shrink: 0;
+    padding: 10px 0 18px 0;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .logout-btn {
-  margin-left: auto;
+    margin-left: auto;
 }
 
 /* ======================================= */
@@ -787,6 +828,11 @@ html,
   background-color: rgba(255, 107, 107, 0.1);
   padding: 10px;
   border-radius: 6px;
+}
+
+.divider {
+    border: none;
+    margin: 15px 0;
 }
 
 

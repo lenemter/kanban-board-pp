@@ -7,6 +7,7 @@ import AccountMenu from './components/AccountMenu';
 import AddUserModal from './components/AddUserModal';
 import AuthPage from './components/AuthPage'; 
 import CreateBoardModal from './components/CreateBoardModal';
+import CreateColumnModal from './components/CreateColumnModal';
 import apiClient from './api';
 // Прочее
 import { UserPlus, ChevronUp, ChevronDown } from 'lucide-react'; 
@@ -23,11 +24,9 @@ const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks) => {
     apiColumnsWithTasks
         .sort((a, b) => a.position - b.position)
         .forEach(col => {
-
             board.columns.push({
                 id: col.id,
                 title: col.name,
-
                 card_ids: col.tasks
                     .sort((a, b) => a.position_in_column - b.position_in_column) 
                     .map(task => task.id),
@@ -39,6 +38,8 @@ const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks) => {
                     columnId: col.id,
                     title: task.title,
                     description: task.description,
+                    priority: task.priority,
+                    due_date: task.due_date,
                 });
             });
         });
@@ -51,20 +52,24 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!apiClient.token); 
   const [loading, setLoading] = useState(false);
   
-  // 📋 СОСТОЯНИЕ ДОСКИ
+  // СОСТОЯНИЕ ДОСКИ
   const [availableBoards, setAvailableBoards] = useState([]); 
   const [currentBoardId, setCurrentBoardId] = useState(null); 
   const [board, setBoard] = useState(null); 
   
-  // 🆕 СОСТОЯНИЕ МОДАЛЬНЫХ ОКОН
+  // СОСТОЯНИЕ МОДАЛЬНЫХ ОКОН
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [showAccount, setShowAccount] = useState(false);
   const [showAddUser, setShowAddUser] = useState(false);
-  const [showCreateBoard, setShowCreateBoard] = useState(false); // <-- НОВОЕ СОСТОЯНИЕ
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [showCreateColumn, setShowCreateColumn] = useState(false);
   const [assigneeCallback, setAssigneeCallback] = useState(null);
   const [showBoardsMenu, setShowBoardsMenu] = useState(true);
+  
+  // СОСТОЯНИЕ КОЛОНКИ ДЛЯ СОЗДАНИЯ ЗАДАЧ
+  const [taskCreationColumnId, setTaskCreationColumnId] = useState(null); 
 
   // ----------------------------------------------------
   // ЛОГИКА АУТЕНТИФИКАЦИИ И ВЫХОДА
@@ -85,10 +90,9 @@ function App() {
   }, []);
   
   // ----------------------------------------------------
-  // ЛОГИКА ЗАГРУЗКИ ДАННЫХ
+  // ЛОГИКА ЗАГРУЗКИ ДОСОК
   // ----------------------------------------------------
   
-  // Функция загрузки колонок и задач для одной доски
   const loadBoardData = useCallback(async (boardId) => {
     setLoading(true);
     try {
@@ -99,9 +103,11 @@ function App() {
             return { ...column, tasks: tasks || [] };
         });
 
-        const columnsWithTasks = await Promise.all(columnsWithTasksPromises)
+        const columnsWithTasks = await Promise.all(columnsWithTasksPromises);
+        
         const boardDetails = availableBoards.find(b => b.id === boardId) 
                              || await apiClient.getBoard(boardId);
+
         const transformedBoard = transformApiToBoardFormat(boardDetails, columnsWithTasks);
         setBoard(transformedBoard);
 
@@ -115,7 +121,6 @@ function App() {
     }
   }, [availableBoards, handleLogout]); 
 
-  // Функция для загрузки списка досок и первой доски
   const loadInitialData = useCallback(async () => {
     if (!apiClient.token) return;
 
@@ -142,22 +147,24 @@ function App() {
     }
   }, [handleLogout, loadBoardData]); 
 
-  // Эффект: Загружаем данные при наличии токена и входе
   useEffect(() => {
     if (isLoggedIn && !board) {
       loadInitialData();
     }
   }, [isLoggedIn, loadInitialData, board]);
   
-
+  // ----------------------------------------------------
+  // ЛОГИКА СОЗДАНИЯ ДОСОК
+  // ----------------------------------------------------
   const handleCreateNewBoard = async (name) => {
     try {
-        // Вызов API для создания доски
         const newBoard = await apiClient.createBoard(name); 
         
         setAvailableBoards(prev => [...prev, newBoard]);
         setCurrentBoardId(newBoard.id);
+        
         await loadBoardData(newBoard.id); 
+        
         setShowCreateBoard(false);
         
     } catch (error) {
@@ -168,20 +175,65 @@ function App() {
 
   
   // ----------------------------------------------------
-  // МЕТОДЫ ДОСКИ 
+  // ЛОГИКА СОЗДАНИЯ КОЛОНКИ
   // ----------------------------------------------------
+
+  const handleCreateNewColumn = async (columnName) => {
+    if (!currentBoardId) {
+        throw new Error("Не выбран ID доски для создания колонки.");
+    }
+
+    setLoading(true);
+    try {
+        const newColumnApi = await apiClient.createColumn(currentBoardId, columnName);
+
+        setBoard(prevBoard => {
+            if (!prevBoard) return prevBoard;
+            
+            const newBoard = { ...prevBoard };
+            
+            newBoard.columns = [
+                ...newBoard.columns,
+                {
+                    id: newColumnApi.id,
+                    title: newColumnApi.name, 
+                    card_ids: [],
+                }
+            ];
+            
+            return newBoard;
+        });
+
+        setShowCreateColumn(false);
+
+    } catch (error) {
+        console.error("Error creating column:", error);
+        throw new Error(error.message || "Не удалось создать колонку.");
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  // ----------------------------------------------------
+  // МЕТОДЫ ЗАДАЧ
+  // ----------------------------------------------------
+  
   const handleOpenCreate = (columnId) => {
+    setTaskCreationColumnId(columnId);
     setShowCreate(true);
   };
 
   const handleCreate = (columnId, card) => {
     // TODO: Здесь должен быть вызов apiClient.createTask(columnId, card)
+    console.warn("Task creation is currently using local state update placeholder.");
     const id = `card-${Date.now()}`;
     const newCard = { id, columnId, ...card };
     const nb = { ...board };
     nb.cards.push(newCard);
     const col = nb.columns.find(c => c.id === columnId);
-    col.card_ids.unshift(id);
+    if (col) {
+        col.card_ids.unshift(id);
+    }
     setBoard(nb);
     setShowCreate(false);
   };
@@ -212,12 +264,15 @@ function App() {
     setShowAddUser(false);
     setAssigneeCallback(null);
   };
+  
+  // ----------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------
 
   if (!isLoggedIn) {
     return <AuthPage onLoginSuccess={handleLoginSuccess} />;
   }
   
-  // Экран загрузки
   if (loading || !board) {
     return (
       <div className="loading-screen" style={{
@@ -229,7 +284,6 @@ function App() {
     );
   }
   
-  // Если вошел и доска загружена
   return (
     <div className="app-root">
       <aside className="sidebar">
@@ -252,7 +306,6 @@ function App() {
                     onClick={() => {
                         if (b.id !== currentBoardId) {
                             setCurrentBoardId(b.id);
-                            // Переключаем доску
                             loadBoardData(b.id); 
                         }
                     }}
@@ -293,6 +346,7 @@ function App() {
           onMoveLocal={handleMoveLocal}
           onOpenCreate={handleOpenCreate}
           onOpenEdit={handleOpenEdit}
+          onOpenCreateColumn={() => setShowCreateColumn(true)} // <-- ПЕРЕДАЧА PROP
         />
       </main>
 
@@ -300,6 +354,7 @@ function App() {
         <CreateTaskModal
           onClose={() => setShowCreate(false)}
           onCreate={handleCreate}
+          currentColumnId={taskCreationColumnId}
           onOpenAssigneeManager={handleOpenAddUserModal}
         />
       )}
@@ -327,6 +382,13 @@ function App() {
         <CreateBoardModal
           onClose={() => setShowCreateBoard(false)}
           onCreate={handleCreateNewBoard}
+        />
+      )}
+      
+      {showCreateColumn && (
+        <CreateColumnModal
+          onClose={() => setShowCreateColumn(false)}
+          onCreate={handleCreateNewColumn}
         />
       )}
     </div>

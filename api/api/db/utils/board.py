@@ -57,6 +57,22 @@ def update_board(session: Session, board: Board, **kwargs) -> Board:
     return board
 
 
+def get_board_users(session: Session, board: Board) -> list[User]:
+    board_user_accesses = session.exec(
+        select(BoardUserAccess).where(
+            BoardUserAccess.board_id == board.id
+        )
+    ).all()
+
+    users: list[User] = []
+    for bua in board_user_accesses:
+        user = session.get(User, bua.user_id)
+        if user is not None:
+            users.append(user)
+
+    return users
+
+
 def add_user_to_board(session: Session, board: Board, user: User) -> BoardUserAccess:
     from .. import BoardUserAccess
 

@@ -47,6 +47,11 @@ async def delete_board(board: api.dependencies.BoardOwnerAccessDep, session: api
     api.db.delete_object(session, board)
 
 
+@router.get("/boards/{board_id}/users", response_model=list[api.schemas.UserPublic])
+def get_board_users(board: api.dependencies.BoardCollaboratorAccessDep, session: api.dependencies.SessionDep):
+    return api.db.get_board_users(session, board)
+
+
 @router.post(
     "/boards/{board_id}/users",
     status_code=status.HTTP_201_CREATED,
@@ -69,6 +74,9 @@ async def remove_user_from_board(
     user = api.db.get_user_by_id(user_id)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't exist")
+
+    if board.owner_id == user_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Can't remove an owner from a board")
 
     board_user_access = api.db.get_board_user_access(session, board, user)
     if board_user_access is None:

@@ -296,7 +296,41 @@ function App() {
     setEditingCard(null);
   };
 
-  const handleMoveLocal = (newBoard) => setBoard(newBoard);
+  const handleMoveLocal = (newBoard) => {
+    setBoard(newBoard);
+
+    (async () => {
+      if (!currentBoardId) return;
+      try {
+        const ids = newBoard.columns.map(c => c.id);
+        const n = ids.length;
+        const offset = n * 10;
+
+        for (let i = 0; i < n; i++) {
+          try {
+            await apiClient.updateColumn(ids[i], { position: i + offset });
+          } catch (err) {
+            console.error('Temporary position update failed for column', ids[i], err);
+          }
+        }
+
+        for (let i = 0; i < n; i++) {
+          try {
+            await apiClient.updateColumn(ids[i], { position: i });
+          } catch (err) {
+            console.error('Final position update failed for column', ids[i], err);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to persist column order:', error);
+        try {
+          await loadBoardData(currentBoardId);
+        } catch (e) {
+          console.error('Failed to reload board after failing to persist column order:', e);
+        }
+      }
+    })();
+  };
 
   const handleOpenAddUserModal = (callback) => {
     setAssigneeCallback(() => callback);

@@ -58,13 +58,17 @@ def update_board(session: Session, board: Board, **kwargs) -> Board:
 
 
 def get_board_users(session: Session, board: Board) -> list[User]:
+    from .. import BoardUserAccess, User
+
+    assert (board.user_id is not None)
+
     board_user_accesses = session.exec(
         select(BoardUserAccess).where(
             BoardUserAccess.board_id == board.id
         )
     ).all()
 
-    users: list[User] = []
+    users: list[User] = [session.get(User, board.user_id)]
     for bua in board_user_accesses:
         user = session.get(User, bua.user_id)
         if user is not None:

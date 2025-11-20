@@ -52,8 +52,8 @@ async def delete_board(board: api.dependencies.BoardOwnerAccessDep, session: api
     status_code=status.HTTP_201_CREATED,
     response_model=api.schemas.BoardUserAccessPublic
 )
-def add_user_to_board(board: api.dependencies.BoardOwnerAccessDep, user_id: int, session: api.dependencies.SessionDep):
-    user = api.db.get_user_by_id(user_id)
+def add_user_to_board(board: api.dependencies.BoardOwnerAccessDep, email: str, session: api.dependencies.SessionDep):
+    user = api.db.get_user_by_email(email)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't exist")
 

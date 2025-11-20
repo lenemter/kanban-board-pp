@@ -46,7 +46,7 @@ if mail_support:
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 async def send_mail(to: NameEmail, subject: str, body: str) -> None:
-    if conf == None:
+    if conf is None:
         return
 
     message = MessageSchema(

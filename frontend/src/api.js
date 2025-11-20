@@ -76,7 +76,7 @@ class ApiClient {
   }
 
   async register(email, name, password) {
-    const url = `${this.baseURL}/users/register`;
+    const url = `${this.baseURL}/register`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -124,7 +124,11 @@ class ApiClient {
   }
 
   async getUser(userId) {
-    return this.request(`/users/${userId}`, { method: 'GET' });
+    return this.request(`/users/id/${userId}`, { method: 'GET' });
+  }
+
+  async getUserByEmail(email) {
+    return this.request(`/users/email/${encodeURIComponent(email)}`, { method: 'GET' });
   }
 
   // Boards
@@ -138,6 +142,10 @@ class ApiClient {
 
   async getBoard(boardId) {
     return this.request(`/boards/${boardId}`, { method: 'GET' });
+  }
+
+  async getBoardUsers(boardId) {
+    return this.request(`/boards/${boardId}/users`, { method: 'GET' });
   }
 
   async createBoard(name) {
@@ -158,8 +166,8 @@ class ApiClient {
     return this.request(`/boards/${boardId}`, { method: 'DELETE' });
   }
 
-  async addUserToBoard(boardId, userId) {
-    return this.request(`/boards/${boardId}/users?user_id=${userId}`, {
+  async addUserToBoard(boardId, email) {
+    return this.request(`/boards/${boardId}/users?email=${encodeURIComponent(email)}`, {
       method: 'POST',
     });
   }

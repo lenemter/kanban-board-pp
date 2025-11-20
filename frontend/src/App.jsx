@@ -130,7 +130,7 @@ function App() {
 
     setLoading(true);
     try {
-        const boardsList = await apiClient.getOwnedBoards();
+        const boardsList = await apiClient.getSharedBoards();
         
         if (boardsList && boardsList.length > 0) {
             setAvailableBoards(boardsList);
@@ -453,7 +453,7 @@ function App() {
         />
       )}
       {showAddUser && (
-        <AddUserModal onClose={handleCloseAddUserModal} onSelectAssignee={assigneeCallback} />
+        <AddUserModal currentBoardId={currentBoardId} onClose={handleCloseAddUserModal} onSelectAssignee={assigneeCallback} />
       )}
       
       {showCreateBoard && (

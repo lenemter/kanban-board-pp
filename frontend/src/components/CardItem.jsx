@@ -5,7 +5,7 @@ import { User, Clock, CheckSquare } from 'lucide-react';
 
 function CardItem({ card, index, onOpenEdit }) {
   return (
-    <Draggable draggableId={card.id} index={index}>
+    <Draggable draggableId={String(card.id)} index={index}>
       {(provided, snapshot) => (
         <div
           className={`card ${snapshot.isDragging ? 'dragging' : ''}`}

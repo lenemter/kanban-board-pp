@@ -9,6 +9,7 @@ import AuthPage from './components/AuthPage';
 import CreateBoardModal from './components/CreateBoardModal';
 import CreateColumnModal from './components/CreateColumnModal';
 import apiClient from './api';
+import ConfirmModal from './components/ConfirmModal';
 // Прочее
 import { UserPlus, ChevronUp, ChevronDown } from 'lucide-react'; 
 
@@ -65,6 +66,9 @@ function App() {
   const [showAddUser, setShowAddUser] = useState(false);
   const [showCreateBoard, setShowCreateBoard] = useState(false);
   const [showCreateColumn, setShowCreateColumn] = useState(false);
+  const [showConfirmDeleteColumn, setShowConfirmDeleteColumn] = useState(false);
+  const [columnToDeleteId, setColumnToDeleteId] = useState(null);
+  const [columnToDeleteTitle, setColumnToDeleteTitle] = useState('');
   const [assigneeCallback, setAssigneeCallback] = useState(null);
   const [showBoardsMenu, setShowBoardsMenu] = useState(true);
   
@@ -215,6 +219,45 @@ function App() {
   };
 
   // ----------------------------------------------------
+  // Удаление колонки
+  // ----------------------------------------------------
+  const handleRequestDeleteColumn = (columnId, columnTitle = '') => {
+    if (!columnId) return;
+    setColumnToDeleteId(columnId);
+    setColumnToDeleteTitle(columnTitle);
+    setShowConfirmDeleteColumn(true);
+  };
+
+  const handleConfirmDeleteColumn = async () => {
+    if (!columnToDeleteId) return;
+    setLoading(true);
+    try {
+      await apiClient.deleteColumn(columnToDeleteId);
+      setBoard(prev => {
+        if (!prev) return prev;
+        const nb = { ...prev };
+        nb.columns = nb.columns.filter(c => c.id !== columnToDeleteId);
+        nb.cards = nb.cards.filter(card => card.columnId !== columnToDeleteId);
+        return nb;
+      });
+    } catch (error) {
+      console.error('Failed to delete column, falling back to local remove:', error);
+      setBoard(prev => {
+        if (!prev) return prev;
+        const nb = { ...prev };
+        nb.columns = nb.columns.filter(c => c.id !== columnToDeleteId);
+        nb.cards = nb.cards.filter(card => card.columnId !== columnToDeleteId);
+        return nb;
+      });
+    } finally {
+      setLoading(false);
+      setShowConfirmDeleteColumn(false);
+      setColumnToDeleteId(null);
+      setColumnToDeleteTitle('');
+    }
+  };
+
+  // ----------------------------------------------------
   // МЕТОДЫ ЗАДАЧ
   // ----------------------------------------------------
   
@@ -346,7 +389,8 @@ function App() {
           onMoveLocal={handleMoveLocal}
           onOpenCreate={handleOpenCreate}
           onOpenEdit={handleOpenEdit}
-          onOpenCreateColumn={() => setShowCreateColumn(true)} // <-- ПЕРЕДАЧА PROP
+            onOpenCreateColumn={() => setShowCreateColumn(true)}
+            onRequestDeleteColumn={handleRequestDeleteColumn}
         />
       </main>
 
@@ -389,6 +433,14 @@ function App() {
         <CreateColumnModal
           onClose={() => setShowCreateColumn(false)}
           onCreate={handleCreateNewColumn}
+        />
+      )}
+      {showConfirmDeleteColumn && (
+        <ConfirmModal
+          title="Delete column"
+          message={`Are you sure you want to delete column "${columnToDeleteTitle || columnToDeleteId}"? This will also remove its tasks.`}
+          onCancel={() => { setShowConfirmDeleteColumn(false); setColumnToDeleteId(null); setColumnToDeleteTitle(''); }}
+          onConfirm={handleConfirmDeleteColumn}
         />
       )}
     </div>

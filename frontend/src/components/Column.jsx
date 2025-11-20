@@ -1,9 +1,9 @@
 import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
+import { Trash2 } from 'lucide-react';
 import CardItem from './CardItem';
 
-function Column({ column, cards, onOpenCreate, onOpenEdit }) {
-  // Получаем количество карточек в этой колонке
+function Column({ column, cards, onOpenCreate, onOpenEdit, onRequestDelete }) {
   const cardCount = cards.length; 
 
   return (
@@ -16,6 +16,9 @@ function Column({ column, cards, onOpenCreate, onOpenEdit }) {
 
         <div className="col-actions">
           <button className="icon-btn" onClick={onOpenCreate}>+</button>
+          <button className="icon-btn" title={`Delete ${column.title}`} onClick={() => onRequestDelete && onRequestDelete() }>
+            <Trash2 size={16} />
+          </button>
         </div>
       </div>
 

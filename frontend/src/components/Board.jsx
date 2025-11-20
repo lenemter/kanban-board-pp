@@ -2,8 +2,7 @@ import React from 'react';
 import { DragDropContext } from '@hello-pangea/dnd';
 import Column from './Column';
 
-// 1. Добавлен новый проп: onOpenCreateColumn
-function Board({ board, onMoveLocal, onOpenCreate, onOpenEdit, onOpenCreateColumn }) {
+function Board({ board, onMoveLocal, onOpenCreate, onOpenEdit, onOpenCreateColumn, onRequestDeleteColumn }) {
   const getCardsForColumn = (col) => {
     return col.card_ids.map(id => board.cards.find(c => c.id === id)).filter(Boolean);
   };
@@ -17,7 +16,6 @@ function Board({ board, onMoveLocal, onOpenCreate, onOpenEdit, onOpenCreateColum
     const sourceCol = newBoard.columns.find(c => c.id === source.droppableId);
     const destCol = newBoard.columns.find(c => c.id === destination.droppableId);
 
-    // Логика перемещения внутри локального состояния
     sourceCol.card_ids.splice(source.index, 1);
     destCol.card_ids.splice(destination.index, 0, draggableId);
 
@@ -38,18 +36,18 @@ function Board({ board, onMoveLocal, onOpenCreate, onOpenEdit, onOpenCreateColum
               cards={getCardsForColumn(col)}
               onOpenCreate={() => onOpenCreate(col.id)}
               onOpenEdit={onOpenEdit}
+              onRequestDelete={() => onRequestDeleteColumn && onRequestDeleteColumn(col.id, col.title)}
             />
           ))}
           
-          {/* 2. Блок для кнопки "Add Column" */}
-          <div className="column add-column">
-            <button 
-                className="btn primary" 
-                onClick={onOpenCreateColumn} // Вызывает модальное окно в App.jsx
-            >
+              <div className="column add-column">
+              <button
+                className="btn primary"
+                onClick={onOpenCreateColumn}
+              >
                 + Add Column
-            </button>
-          </div>
+              </button>
+              </div>
         </div>
       </DragDropContext>
     </div>

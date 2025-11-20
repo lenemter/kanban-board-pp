@@ -152,6 +152,12 @@ html,
     font-weight: 600;
 }
 
+.col-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
 .icon-btn {
     background: transparent;
     border: none;
@@ -164,9 +170,10 @@ html,
 .column-body {
     border-radius: 8px;
     padding: 12px;
-    min-height: 240px;
-    max-height: 75vh;
-    overflow: auto
+    /* min-height: 240px; */
+    min-height: 0;
+    flex-grow: 1;
+    overflow: auto;
 }
 
 .col-count {
@@ -187,6 +194,7 @@ html,
     color: #fff;
     margin-left: 5px;
     margin-top: 5px;
+    flex-shrink: 0;
 }
 
 .column.add-column {
@@ -208,6 +216,7 @@ html,
     align-items: center;
     font-size: 16px;
     color: #fff;
+    flex-grow: 1;
 }
 
 /* Стили для кнопки (+) */
@@ -833,6 +842,20 @@ html,
 .divider {
     border: none;
     margin: 15px 0;
+}
+
+.drag-handle {
+    margin-right: 8px;
+    cursor: grab;
+    color: var(--muted);
+    line-height: 1;
+    padding: 5px;
+    margin-left: -5px;
+    transition: color 0.2s;
+}
+
+.drag-handle:hover {
+    color: var(--accent);
 }
 
 

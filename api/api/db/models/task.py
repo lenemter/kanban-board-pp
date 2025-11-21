@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from sqlmodel import Field, SQLModel, Relationship
 
@@ -11,8 +11,9 @@ class Task(SQLModel, table=True):
     position: int = Field()
     title: str = Field()
     description: str | None = Field()
-    priority: Priority | None = Field(default=None)
+    priority: Priority | None = Field()
     assignee_id: int | None = Field(foreign_key="user.id")
+    due_date: date | None = Field()
     created_at: datetime = Field(default_factory=datetime.now)
     author: int = Field(foreign_key="user.id")
     tags: list["TaskTag"] = Relationship(back_populates="task", sa_relationship_kwargs={"lazy": "selectin"})

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import enum
 
 from pydantic import BaseModel
@@ -20,6 +20,7 @@ class TaskPublic(BaseModel):
     description: str | None
     priority: Priority | None
     assignee_id: int | None
+    due_date: date | None
     created_at: datetime
     author: int
     tags: list[TaskTagPublic]
@@ -30,6 +31,7 @@ class TaskCreate(BaseModel):
     description: str | None
     priority: Priority | None
     assignee_id: int | None
+    due_date: date | None
 
 
 class TaskUpdate(BaseModel):
@@ -39,3 +41,4 @@ class TaskUpdate(BaseModel):
     description: UnsetType | str | None = Unset
     priority: UnsetType | Priority | None = Unset
     assignee_id: UnsetType | int | None = Unset
+    due_date: UnsetType | date | None = Unset

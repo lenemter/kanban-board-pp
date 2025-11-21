@@ -2,6 +2,8 @@ from datetime import datetime
 
 from sqlmodel import Field, SQLModel, Relationship
 
+from api.schemas.task import Priority
+
 
 class Task(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -9,6 +11,7 @@ class Task(SQLModel, table=True):
     position: int = Field()
     title: str = Field()
     description: str | None = Field()
+    priority: Priority | None = Field(default=None)
     assignee_id: int | None = Field(foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.now)
     author: int = Field(foreign_key="user.id")

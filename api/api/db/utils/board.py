@@ -60,7 +60,7 @@ def update_board(session: Session, board: Board, **kwargs) -> Board:
 def get_board_users(session: Session, board: Board) -> list[User]:
     from .. import BoardUserAccess, User
 
-    assert (board.owner_id is not None)
+    assert board.owner_id is not None
 
     board_user_accesses = session.exec(
         select(BoardUserAccess).where(
@@ -68,7 +68,10 @@ def get_board_users(session: Session, board: Board) -> list[User]:
         )
     ).all()
 
-    users: list[User] = [session.get(User, board.owner_id)]
+    owner = session.get(User, board.owner_id)
+    assert owner is not None
+
+    users: list[User] = [owner]
     for bua in board_user_accesses:
         user = session.get(User, bua.user_id)
         if user is not None:

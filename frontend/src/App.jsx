@@ -14,38 +14,57 @@ import ConfirmModal from './components/ConfirmModal';
 import { UserPlus, ChevronUp, ChevronDown } from 'lucide-react'; 
 
 // Утилита для преобразования данных API в формат фронтенда
-const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks) => {
-    const board = {
-        id: boardDetails.id,
-        title: boardDetails.name,
-        cards: [],
-        columns: [],
-    };
-    
-    apiColumnsWithTasks
-        .sort((a, b) => a.position - b.position)
-        .forEach(col => {
-            board.columns.push({
-                id: col.id,
-                title: col.name,
-                card_ids: col.tasks
-                    .sort((a, b) => a.position_in_column - b.position_in_column) 
-                    .map(task => task.id),
-            });
+const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers = []) => {
+  const board = {
+    id: boardDetails.id,
+    title: boardDetails.name,
+    cards: [],
+    columns: [],
+  };
 
-            col.tasks.forEach(task => {
-                board.cards.push({
-                    id: task.id,
-                    columnId: col.id,
-                    title: task.title,
-                    description: task.description,
-                    priority: task.priority,
-                    due_date: task.due_date,
-                });
-            });
+  apiColumnsWithTasks
+    .sort((a, b) => a.position - b.position)
+    .forEach(col => {
+      board.columns.push({
+        id: col.id,
+        title: col.name,
+        card_ids: col.tasks
+          .sort((a, b) => a.position_in_column - b.position_in_column) 
+          .map(task => task.id),
+      });
+
+      col.tasks.forEach(task => {
+        let assigneeId = null;
+        let assigneeName = '';
+        if (task.assignee_id) {
+          assigneeId = task.assignee_id;
+        } else if (task.assignee && typeof task.assignee === 'number') {
+          assigneeId = task.assignee;
+        } else if (task.assignee && typeof task.assignee === 'string') {
+          // sometimes backend returns a name string
+          assigneeName = task.assignee;
+        }
+
+        if (task.assignee_name) assigneeName = task.assignee_name;
+        else if (!assigneeName && assigneeId) {
+          const u = (boardUsers || []).find(x => x.id === assigneeId || x.id === String(assigneeId));
+          assigneeName = u ? (u.name || u.email || u.id) : '';
+        }
+
+        board.cards.push({
+          id: task.id,
+          columnId: col.id,
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          due_date: task.due_date,
+          assignee_id: assigneeId,
+          assignee_name: assigneeName,
         });
-    
-    return board;
+      });
+    });
+
+  return board;
 };
 
 
@@ -57,6 +76,7 @@ function App() {
   const [availableBoards, setAvailableBoards] = useState([]); 
   const [currentBoardId, setCurrentBoardId] = useState(null); 
   const [board, setBoard] = useState(null); 
+  const [boardUsers, setBoardUsers] = useState([]);
   
   // СОСТОЯНИЕ МОДАЛЬНЫХ ОКОН
   const [showCreate, setShowCreate] = useState(false);
@@ -109,11 +129,20 @@ function App() {
 
         const columnsWithTasks = await Promise.all(columnsWithTasksPromises);
         
-        const boardDetails = availableBoards.find(b => b.id === boardId) 
-                             || await apiClient.getBoard(boardId);
+        const boardDetails = availableBoards.find(b => b.id === boardId)
+                   || await apiClient.getBoard(boardId);
 
-        const transformedBoard = transformApiToBoardFormat(boardDetails, columnsWithTasks);
+        let users = [];
+        try {
+          users = await apiClient.getBoardUsers(boardId) || [];
+        } catch (err) {
+          console.warn('Failed to load board users', err);
+          users = [];
+        }
+
+        const transformedBoard = transformApiToBoardFormat(boardDetails, columnsWithTasks, users);
         setBoard(transformedBoard);
+        setBoardUsers(users);
 
     } catch (error) {
         console.error("Failed to load board details:", error);
@@ -266,19 +295,52 @@ function App() {
     setShowCreate(true);
   };
 
-  const handleCreate = (columnId, card) => {
-    // TODO: Здесь должен быть вызов apiClient.createTask(columnId, card)
-    console.warn("Task creation is currently using local state update placeholder.");
-    const id = `card-${Date.now()}`;
-    const newCard = { id, columnId, ...card };
-    const nb = { ...board };
-    nb.cards.push(newCard);
-    const col = nb.columns.find(c => c.id === columnId);
-    if (col) {
-        col.card_ids.unshift(id);
+  const handleCreate = async (columnId, card) => {
+    setLoading(true);
+    try {
+      const payload = {
+        title: card.title,
+        description: card.description,
+        priority: card.priority,
+        due_date: card.due_date,
+      };
+      if (card.assignee_id !== undefined) payload.assignee_id = card.assignee_id;
+
+      const created = await apiClient.createTask(columnId, payload);
+
+      const createdId = created.id ?? created.task_id ?? created._id ?? created.id;
+      let assigneeId = created.assignee_id ?? created.assignee ?? card.assignee_id ?? null;
+      let assigneeName = created.assignee_name ?? created.assignee_name ?? '';
+      if (!assigneeName && assigneeId) {
+        const u = boardUsers.find(u => String(u.id) === String(assigneeId) || String(u.user_id) === String(assigneeId) || u.email === assigneeId);
+        assigneeName = u ? (u.name || u.email || u.id) : '';
+      }
+
+      const newCard = {
+        id: createdId ?? `card-${Date.now()}`,
+        columnId,
+        title: created.title ?? payload.title,
+        description: created.description ?? payload.description,
+        priority: created.priority ?? payload.priority,
+        due_date: created.due_date ?? payload.due_date,
+        assignee_id: assigneeId,
+        assignee_name: assigneeName,
+      };
+
+      const nb = { ...board };
+      nb.cards = [...nb.cards, newCard];
+      const col = nb.columns.find(c => String(c.id) === String(columnId));
+      if (col) {
+        col.card_ids = [newCard.id, ...(col.card_ids || [])];
+      }
+      setBoard(nb);
+      setShowCreate(false);
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      alert('Failed to create task: ' + (error.message || error));
+    } finally {
+      setLoading(false);
     }
-    setBoard(nb);
-    setShowCreate(false);
   };
 
   const handleOpenEdit = (cardId) => {
@@ -287,13 +349,48 @@ function App() {
     setShowEdit(true);
   };
 
-  const handleSaveEdit = (cardId, payload) => {
-    // TODO: Здесь должен быть вызов apiClient.updateTask(cardId, payload)
-    const nb = { ...board };
-    nb.cards = nb.cards.map(c => c.id === cardId ? { ...c, ...payload } : c);
-    setBoard(nb);
-    setShowEdit(false);
-    setEditingCard(null);
+  const handleSaveEdit = async (cardId, payload) => {
+    setLoading(true);
+    try {
+      const updatePayload = {
+        title: payload.title,
+        description: payload.description,
+        priority: payload.priority,
+        due_date: payload.due_date,
+      };
+      if (payload.assignee_id !== undefined) updatePayload.assignee_id = payload.assignee_id;
+
+      const updated = await apiClient.updateTask(cardId, updatePayload);
+
+      const nb = { ...board };
+      nb.cards = nb.cards.map(c => {
+        if (c.id !== cardId) return c;
+        const assigneeId = updated.assignee_id ?? payload.assignee_id ?? c.assignee_id;
+        let assigneeName = updated.assignee_name ?? '';
+        if (!assigneeName && assigneeId) {
+          const u = boardUsers.find(u => String(u.id) === String(assigneeId) || u.email === assigneeId);
+          assigneeName = u ? (u.name || u.email || u.id) : '';
+        }
+
+        return {
+          ...c,
+          title: updated.title ?? payload.title ?? c.title,
+          description: updated.description ?? payload.description ?? c.description,
+          priority: updated.priority ?? payload.priority ?? c.priority,
+          due_date: updated.due_date ?? payload.due_date ?? c.due_date,
+          assignee_id: assigneeId,
+          assignee_name: assigneeName,
+        };
+      });
+      setBoard(nb);
+      setShowEdit(false);
+      setEditingCard(null);
+    } catch (error) {
+      console.error('Failed to update task:', error);
+      alert('Failed to update task: ' + (error.message || error));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleMoveLocal = (newBoard) => {
@@ -406,7 +503,7 @@ function App() {
           <button className="account-btn" onClick={() => setShowAccount(true)}>Account</button>
         </div>
       </aside>
-
+ 
       <main className="main-area">
         <header className="topbar">
           <div className="top-left">{board.title}</div>
@@ -421,6 +518,15 @@ function App() {
         <Board
           board={board}
           onMoveLocal={handleMoveLocal}
+          onTaskMove={async (taskId, destColumnId, destIndex) => {
+            try {
+              const columnIdNum = isNaN(Number(destColumnId)) ? destColumnId : Number(destColumnId);
+              await apiClient.updateTask(taskId, { column_id: columnIdNum, position: destIndex });
+            } catch (err) {
+              console.error('Failed to persist task move:', err);
+              try { if (currentBoardId) await loadBoardData(currentBoardId); } catch(e) { console.error(e); }
+            }
+          }}
           onOpenCreate={handleOpenCreate}
           onOpenEdit={handleOpenEdit}
             onOpenCreateColumn={() => setShowCreateColumn(true)}
@@ -434,6 +540,7 @@ function App() {
           onCreate={handleCreate}
           currentColumnId={taskCreationColumnId}
           onOpenAssigneeManager={handleOpenAddUserModal}
+          boardUsers={boardUsers}
         />
       )}
 
@@ -442,6 +549,7 @@ function App() {
           card={editingCard}
           onClose={() => setShowEdit(false)}
           onSave={handleSaveEdit}
+          boardUsers={boardUsers}
         />
       )}
 

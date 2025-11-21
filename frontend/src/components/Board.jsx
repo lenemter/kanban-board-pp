@@ -2,9 +2,9 @@ import React from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd'; 
 import Column from './Column';
 
-function Board({ board, onMoveLocal, onOpenCreate, onOpenEdit, onOpenCreateColumn, onRequestDeleteColumn }) {
+function Board({ board, onMoveLocal, onTaskMove, onOpenCreate, onOpenEdit, onOpenCreateColumn, onRequestDeleteColumn }) {
   const getCardsForColumn = (col) => {
-    return col.card_ids.map(id => board.cards.find(c => c.id === id)).filter(Boolean);
+    return col.card_ids.map(id => board.cards.find(c => String(c.id) === String(id))).filter(Boolean);
   };
 
   const onDragEnd = (result) => {
@@ -24,15 +24,36 @@ function Board({ board, onMoveLocal, onOpenCreate, onOpenEdit, onOpenCreateColum
       return;
     }
 
-    const sourceCol = newBoard.columns.find(c => String(c.id) === source.droppableId);
-    const destCol = newBoard.columns.find(c => String(c.id) === destination.droppableId);
+    const taskId = Number(draggableId);
+    const sourceColId = Number(source.droppableId);
+    const destColId = Number(destination.droppableId);
+
+    const sourceCol = newBoard.columns.find(c => c.id === sourceColId);
+    const destCol = newBoard.columns.find(c => c.id === destColId);
+
+    if (!sourceCol || !destCol) {
+      console.error('Column not found', { sourceColId, destColId });
+      return;
+    }
+
+    sourceCol.card_ids = sourceCol.card_ids.filter(id => Number(id) !== taskId);
     
-    sourceCol.card_ids.splice(source.index, 1);
-    destCol.card_ids.splice(destination.index, 0, Number(draggableId));
+    destCol.card_ids.splice(destination.index, 0, taskId);
+
+    const movedCard = newBoard.cards.find(c => Number(c.id) === taskId);
+    if (movedCard) {
+      movedCard.columnId = destColId;
+    }
 
     onMoveLocal(newBoard);
 
-    // TODO: добавить бекенд API-вызов для обновления позиции
+    if (typeof onTaskMove === 'function') {
+      try {
+        onTaskMove(taskId, destColId, destination.index);
+      } catch (err) {
+        console.error('onTaskMove handler failed', err);
+      }
+    }
   };
 
   return (

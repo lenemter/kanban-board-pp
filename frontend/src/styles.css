@@ -10,7 +10,7 @@
     --card-stroke: #3A3047;
     --text: #A390AB;
     --text-dark: #4A4459;
-    --primary-button-bg: #E8DEF8;
+    --primary-button-bg: #E8DEF8
 }
 
 * {
@@ -268,6 +268,24 @@ html,
   font-size: 13px;
   color: var(--muted);
   padding-top: 0;
+}
+
+.card-footer .meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.card-footer .meta .assignee {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-footer .meta .date {
+    flex-shrink: 0;
+    opacity: 0.95;
 }
 
 .card-footer span {

@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
-import { initialUsers } from '../utils/usersData';
+
+// Константы для маппинга приоритетов
+const PRIORITY_MAP = {
+  'Low': 1,
+  'Medium': 2,
+  'High': 3,
+};
+const DEFAULT_PRIORITY_STRING = 'Medium';
 
 
-// Извлекаем имена пользователей
-const userNames = initialUsers.map(user => user.name);
-
-
-function CreateTaskModal({ onClose, onCreate }) {
+function CreateTaskModal({ onClose, onCreate, boardUsers = [], currentColumnId }) {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
-  const [priority, setPriority] = useState('Medium');
+  const [priority, setPriority] = useState(DEFAULT_PRIORITY_STRING);
   const [assignee, setAssignee] = useState('');
   const [dueDate, setDueDate] = useState('');
+
+  const users = boardUsers || [];
 
   const handleCreate = () => {
     if (!title.trim() || !assignee || !dueDate) {
@@ -19,14 +24,23 @@ function CreateTaskModal({ onClose, onCreate }) {
       return;
     }
 
-    onCreate('col-1', {
+
+    const priorityId = PRIORITY_MAP[priority] || PRIORITY_MAP[DEFAULT_PRIORITY_STRING];
+
+    const assigneeIdNumber = parseInt(assignee,10);
+    console.log(`assigneeIdNumber: ${assigneeIdNumber}`, typeof assigneeIdNumber); // Debug i
+    if (isNaN(assigneeIdNumber)) {
+      console.error('Ошибка: assignee ID не является числом или пуст.');
+      alert('Неверный ID исполнителя.');
+      return;
+    }
+
+    onCreate(Number(currentColumnId), {
       title,
       description: desc,
-      priority,
-      assignee,
-      due_date: dueDate,
-      subtasks_total: 0,
-      subtasks_done: 0
+      priority: priorityId,
+      assignee_id: assigneeIdNumber ?? 2, 
+      due_date: dueDate || null,
     });
     onClose();
   };
@@ -36,7 +50,6 @@ function CreateTaskModal({ onClose, onCreate }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
 
-        {/* Шапка модального окна */}
         <div className="modal-header">
           <h3 className="modal-title">Create new task</h3>
           <button className="icon-btn" onClick={onClose}>×</button>
@@ -58,9 +71,9 @@ function CreateTaskModal({ onClose, onCreate }) {
 
         <label>Priority</label>
         <select value={priority} onChange={e => setPriority(e.target.value)}>
-          <option>Low</option>
-          <option>Medium</option>
-          <option>High</option>
+          <option value="Low">Low</option>
+          <option value="Medium">Medium</option>
+          <option value="High">High</option>
         </select>
 
         <label>Assignee*</label>
@@ -69,17 +82,20 @@ function CreateTaskModal({ onClose, onCreate }) {
           onChange={e => setAssignee(e.target.value)}
         >
           <option value="" disabled>Select assignee</option>
-          {/* Перебираем имена пользователей из файла users.js */}
-          {userNames.map(name => (
-            <option key={name} value={name}>{name}</option>
-          ))}
+          {users.map(u => {
+            const uid = u.id ?? u.user_id ?? u._id ?? u.email ?? u.username ?? u.name ?? u.full_name ?? u.display_name;
+            const label = u.name ?? u.full_name ?? u.display_name ?? u.username ?? u.email ?? uid;
+            return (
+              <option key={uid} value={uid}>{label}</option>
+            );
+          })}
         </select>
 
         <label>Due Date*</label>
         <input
+          type="date"
           value={dueDate}
           onChange={e => setDueDate(e.target.value)}
-          placeholder="e.g, Oct 20"
         />
 
         <div className="modal-actions">

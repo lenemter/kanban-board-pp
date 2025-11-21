@@ -32,6 +32,15 @@ class ApiClient {
       headers,
     };
 
+    if (config.body && typeof config.body === 'string') {
+        try {
+            const parsedBody = JSON.parse(config.body);
+            console.log('Request Body (Parsed JSON):', parsedBody); 
+        } catch (e) {
+            console.warn('Could not parse request body for logging (probably form data):', config.body);
+        }
+    }
+
     try {
       const response = await fetch(url, config);
       
@@ -70,7 +79,6 @@ class ApiClient {
     }
 
     const data = await response.json();
-    // Сохраняем токен, ключ которого в ответе access_token
     this.setToken(data.access_token); 
     return data;
   }

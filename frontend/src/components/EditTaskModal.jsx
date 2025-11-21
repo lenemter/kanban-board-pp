@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import { initialUsers } from '../utils/usersData';
 import { Plus, X } from 'lucide-react';
-
-// Получаем имена пользователей
-const userNames = initialUsers.map(user => user.name);
 
 // TODO: добавить с бекенда
 const initialSubtasks = [
@@ -16,12 +12,36 @@ const initialComments = [
 ];
 
 
-function EditTaskModal({ card, onClose, onSave }) {
+function EditTaskModal({ card, onClose, onSave, boardUsers = [] }) {
     const [title, setTitle] = useState(card.title || '');
     const [desc, setDesc] = useState(card.description || '');
     const [priority, setPriority] = useState(card.priority || 'Medium');
-    const [assignee, setAssignee] = useState(card.assignee || '');
-    const [dueDate, setDueDate] = useState(card.due_date || 'Oct 20');
+
+    const resolveInitialAssigneeId = () => {
+        if (card.assignee_id) return String(card.assignee_id);
+        if (card.assignee) {
+            const byId = (boardUsers || []).find(u => String(u.id) === String(card.assignee) || String(u.user_id) === String(card.assignee) || String(u._id) === String(card.assignee));
+            if (byId) return String(byId.id ?? byId.user_id ?? byId._id);
+            const byName = (boardUsers || []).find(u => (u.name && u.name === card.assignee) || (u.full_name && u.full_name === card.assignee) || (u.display_name && u.display_name === card.assignee) || (u.username && u.username === card.assignee));
+            if (byName) return String(byName.id ?? byName.user_id ?? byName._id);
+        }
+        if (card.assignee_name) {
+            const found = (boardUsers || []).find(u => (u.name && u.name === card.assignee_name) || (u.full_name && u.full_name === card.assignee_name) || (u.display_name && u.display_name === card.assignee_name) || (u.email && u.email === card.assignee_name) || (u.username && u.username === card.assignee_name));
+            return found ? String(found.id ?? found.user_id ?? found._id) : '';
+        }
+        return '';
+    };
+
+    const [assignee, setAssignee] = useState(resolveInitialAssigneeId());
+
+    const toISODate = d => {
+        if (!d) return '';
+        const dt = new Date(d);
+        if (!isNaN(dt)) return dt.toISOString().slice(0,10);
+        return '';
+    };
+
+    const [dueDate, setDueDate] = useState(toISODate(card.due_date));
     
     const [subtasks, setSubtasks] = useState(initialSubtasks);
     const [newSubtaskText, setNewSubtaskText] = useState('');
@@ -29,7 +49,6 @@ function EditTaskModal({ card, onClose, onSave }) {
     const [newCommentText, setNewCommentText] = useState('');
 
     const handleSave = () => {
-        // Логика сохранения
         onSave(card.id, { 
             title, 
             description: desc, 
@@ -106,16 +125,18 @@ function EditTaskModal({ card, onClose, onSave }) {
                         <label>Assignee</label>
                         <select value={assignee} onChange={e => setAssignee(e.target.value)}>
                             <option value="" disabled>Select assignee</option>
-                            {userNames.map(name => (
-                                <option key={name} value={name}>{name}</option>
-                            ))}
+                            {(boardUsers || []).map(u => {
+                                const uid = u.id ?? u.user_id ?? u._id ?? u.email ?? u.username ?? u.name ?? u.full_name ?? u.display_name;
+                                const label = u.name ?? u.full_name ?? u.display_name ?? u.username ?? u.email ?? uid;
+                                return <option key={uid} value={uid}>{label}</option>;
+                            })}
                         </select>
                     </div>
 
                     <div className="meta-group">
                         <label>Due Date</label>
                         <input 
-                            type="text"
+                            type="date"
                             value={dueDate} 
                             onChange={e => setDueDate(e.target.value)}
                         />

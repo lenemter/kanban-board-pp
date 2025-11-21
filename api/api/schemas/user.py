@@ -6,7 +6,7 @@ import pydantic_core
 from .unset_type import Unset, UnsetType
 
 
-class PasswordStr:
+class PasswordStr(str):
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
@@ -25,9 +25,6 @@ class PasswordStr:
             raise ValueError("Password is too weak: it must be at least 8 symbols long")
 
         return value
-
-    def __init__(self, internal_string: str) -> None:
-        self.internal_string = internal_string
 
 
 class UserPublic(BaseModel):

@@ -47,7 +47,10 @@ def create_access_token(data: dict, expires_delta: timedelta) -> api.schemas.Tok
 
 
 @router.post("/token")
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]) -> api.schemas.Token:
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: api.dependencies.SessionDep
+) -> api.schemas.Token:
     user = authenticate_user(form_data.username, form_data.password)
     if user is None:
         raise HTTPException(
@@ -55,6 +58,9 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    if not mail_support:
+        api.db.verify_user(session, user)
 
     if not user.is_verified:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email before logging in")
@@ -77,7 +83,7 @@ async def register(
 
     new_user = api.db.register_user(
         email=user_create.email,
-        hashed_password=api.utils.get_password_hash(user_create.password.internal_string),
+        hashed_password=api.utils.get_password_hash(user_create.password),
         name=user_create.name,
     )
 

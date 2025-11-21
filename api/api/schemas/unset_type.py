@@ -19,7 +19,7 @@ class UnsetType:
             return None
         if isinstance(value, UnsetType):
             return value
-        raise ValueError("This field must be Unset")
+        raise ValueError("This field must be Unset. Probably some validation failed.")
 
 
 Unset = UnsetType()

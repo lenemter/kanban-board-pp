@@ -22,7 +22,7 @@ mail_support = (
     _mail_port is not None
 )
 
-print(f"MAIL SUPPORT {mail_support}")
+print(f"Mail support status: {mail_support}")
 
 if mail_support:
     mail_password = SecretStr(_mail_password)  # type: ignore

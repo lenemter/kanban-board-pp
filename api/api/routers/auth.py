@@ -71,21 +71,23 @@ async def register(
     background_tasks: BackgroundTasks,
     user_create: api.schemas.UserCreate,
     session: api.dependencies.SessionDep
-) -> None:
+) -> dict:
     if api.db.get_user_by_email(user_create.email) is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already taken")
 
     new_user = api.db.register_user(
         email=user_create.email,
-        hashed_password=api.utils.get_password_hash(user_create.password),
+        hashed_password=api.utils.get_password_hash(user_create.password.internal_string),
         name=user_create.name,
     )
 
     if mail_support:
         base_url = str(request.base_url).rstrip("/")
         background_tasks.add_task(send_verification_email, base_url, new_user)
+        return {"message": "User created successfully. Please verify your email."}
     else:
         api.db.verify_user(session, new_user)
+        return {"message": "User created successfully. Your account was automatically verified."}
 
 
 @router.get("/verify/{token}", status_code=status.HTTP_200_OK)

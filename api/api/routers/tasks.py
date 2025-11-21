@@ -109,7 +109,7 @@ async def update_task(
             api.db.create_task_comment(task, None, content=f"Moved from {column.name} to {new_column.name}")
 
         validate_new_position(new_column, new_position)
-        api.db.insert_task_to_position(session, task, new_column, new_position)
+        api.db.insert_task_to_position(session, task, column, new_column, new_position)
 
     task_update_dump = task_update.model_dump(exclude_unset=True)
     try:

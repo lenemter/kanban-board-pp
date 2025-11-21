@@ -42,10 +42,26 @@ def update_task(session: Session, task: Task, **kwargs) -> Task:
     return task
 
 
-def insert_task_to_position(session: Session, task: Task, column: Column, new_position: int) -> Task:
-    tasks = get_tasks(column)
+def insert_task_to_position(
+    session: Session,
+    task: Task,
+    old_column: Column,
+    new_column: Column,
+    new_position: int
+) -> Task:
+    assert new_column.id is not None
+
+    tasks = get_tasks(old_column)
     tasks.sort(key=lambda t: t.position)
-    for i in range(min(task.position,  new_position), max(task.position, new_position)):
+    for i in range(task.position, len(tasks)):
+        tasks[i].position -= 1
+        session.merge(tasks[i])
+
+    task.column_id = new_column.id
+
+    tasks = get_tasks(new_column)
+    tasks.sort(key=lambda t: t.position)
+    for i in range(new_position, len(tasks)):
         tasks[i].position += 1
         session.merge(tasks[i])
 

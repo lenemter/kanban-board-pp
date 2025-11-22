@@ -84,7 +84,10 @@ async def update_task(
     if not isinstance(task_update.title, api.schemas.UnsetType) and task_update.title != task.title:
         api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
 
-    has_new_column = not isinstance(task_update.column_id, api.schemas.UnsetType) and task_update.column_id != task.column_id
+    has_new_column = (
+        not isinstance(task_update.column_id, api.schemas.UnsetType) and
+        task_update.column_id != task.column_id
+    )
     new_column_id = (
         task_update.column_id
         if has_new_column
@@ -92,7 +95,10 @@ async def update_task(
     )
     assert not isinstance(new_column_id, api.schemas.UnsetType)
 
-    has_new_position = not isinstance(task_update.position, api.schemas.UnsetType) and task_update.position != task.position
+    has_new_position = (
+        not isinstance(task_update.position, api.schemas.UnsetType) and
+        task_update.position != task.position
+    )
     new_position = (
         task_update.position
         if has_new_position
@@ -104,8 +110,8 @@ async def update_task(
         # we treat new position as a position to insert into
         # so we need to move tasks after new position and before last position to position + 1
 
+        new_column = validate_new_column(board, new_column_id)
         if has_new_column:
-            new_column = validate_new_column(board, new_column_id)
             api.db.create_task_comment(task, None, content=f"Moved from {column.name} to {new_column.name}")
 
         validate_new_position(new_column, new_position)

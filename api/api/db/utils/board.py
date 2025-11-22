@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 if TYPE_CHECKING:
     from .. import Board, BoardUserAccess, User
@@ -46,6 +46,27 @@ def create_board(owner: User, **kwargs) -> Board:
         session.refresh(new_board)
 
         return new_board
+
+
+def get_n_columns(board: Board) -> int:
+    from .. import engine, Column
+
+    with Session(engine) as session:
+        return session.exec(select(func.count()).select_from(Column).where(Column.board_id == board.id)).one()
+
+
+def get_n_tasks(board: Board) -> int:
+    from .. import engine, Column, Task
+
+    with Session(engine) as session:
+        statement = (
+            select(func.count(Task.id))  # type: ignore
+            .select_from(Task)
+            .join(Column, Column.id == Task.column_id)  # type: ignore
+            .where(Column.board_id == board.id)
+        )
+
+        return session.exec(statement).one()
 
 
 def update_board(session: Session, board: Board, **kwargs) -> Board:

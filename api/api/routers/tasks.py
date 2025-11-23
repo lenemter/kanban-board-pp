@@ -18,11 +18,15 @@ def validate_new_column(board: api.db.Board, new_column_id: int) -> api.db.Colum
     return new_column
 
 
-def validate_new_position(new_column: api.db.Column, new_position: int) -> None:
-    if new_position < 0:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Position must be greater or equal 0")
-    if new_position >= len(api.db.get_tasks(new_column)):
-        raise HTTPException(status.HTTP_409_CONFLICT, "Position is out of bounds for this column")
+def validate_move(before: api.db.Task | None, after: api.db.Task | None) -> None:
+    if before and before.column_id is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid before task")
+
+    if after and after.column_id is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid after task")
+
+    if before and after and before.column_id != after.column_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Before/after must belong to same column")
 
 
 def validate_new_assignee(board: api.db.Board, assignee_id: int | None) -> api.db.User | None:
@@ -84,47 +88,27 @@ async def update_task(
     if not isinstance(task_update.title, api.schemas.UnsetType) and task_update.title != task.title:
         api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
 
-    has_new_column = (
-        not isinstance(task_update.column_id, api.schemas.UnsetType) and
-        task_update.column_id != task.column_id
-    )
-    new_column_id = (
-        task_update.column_id
-        if has_new_column
-        else task.column_id
-    )
-    assert not isinstance(new_column_id, api.schemas.UnsetType)
+    return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
 
-    has_new_position = (
-        not isinstance(task_update.position, api.schemas.UnsetType) and
-        task_update.position != task.position
-    )
-    new_position = (
-        task_update.position
-        if has_new_position
-        else task.position
-    )
-    assert not isinstance(new_position, api.schemas.UnsetType)
 
-    if has_new_column or has_new_position:
-        # we treat new position as a position to insert into
-        # so we need to move tasks after new position and before last position to position + 1
+@router.patch("tasks/{task_id}/move", response_model=api.schemas.TaskPublic)
+async def move_task(
+    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    move_payload: api.schemas.MoveTaskPayload,
+    session: api.dependencies.SessionDep,
+):
+    board, column, task = board_column_and_task
 
-        new_column = validate_new_column(board, new_column_id)
-        if has_new_column:
-            api.db.create_task_comment(task, None, content=f"Moved from {column.name} to {new_column.name}")
+    new_column = api.db.get_column_by_id(move_payload.new_column_id)
+    if not new_column:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Column not found")
 
-        validate_new_position(new_column, new_position)
-        api.db.insert_task_to_position(session, task, column, new_column, new_position)
+    before = api.db.get_task(session, move_payload.before_id) if move_payload.before_id else None
+    after = api.db.get_task(session, move_payload.after_id) if move_payload.after_id else None
 
-    task_update_dump = task_update.model_dump(exclude_unset=True)
-    try:
-        task_update_dump.pop("column_id")
-        task_update_dump.pop("position")
-    except KeyError:
-        pass
+    validate_move(before, after)
 
-    return api.db.update_task(session, task, **task_update_dump)
+    return api.db.move_task(session, task, new_column, before, after)
 
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)

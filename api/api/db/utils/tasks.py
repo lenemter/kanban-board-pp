@@ -6,15 +6,21 @@ if TYPE_CHECKING:
     from .. import Column, Task, TaskTag
 
 
+def get_task(session: Session, task_id: int) -> Task | None:
+    from .. import Task
+
+    return session.get(Task, task_id)
+
+
 def get_tasks(column: Column) -> list[Task]:
     from .. import engine, Task
 
     with Session(engine) as session:
         return list(
             session.exec(
-                select(Task).where(
-                    Task.column_id == column.id
-                )
+                select(Task)
+                .where(Task.column_id == column.id)
+                .order_by(Task.position)  # type: ignore
             ).all()
         )
 
@@ -42,31 +48,32 @@ def update_task(session: Session, task: Task, **kwargs) -> Task:
     return task
 
 
-def insert_task_to_position(
+def move_task(
     session: Session,
     task: Task,
-    old_column: Column,
     new_column: Column,
-    new_position: int
+    before: Task | None,
+    after: Task | None,
 ) -> Task:
     assert new_column.id is not None
 
-    tasks = get_tasks(old_column)
-    tasks.sort(key=lambda t: t.position)
-    for i in range(task.position, len(tasks)):
-        tasks[i].position -= 1
-        session.merge(tasks[i])
+    if before and after:
+        # между двумя задачами
+        new_position = (before.position + after.position) / 2
+    elif before:
+        # вставить перед задачей
+        new_position = before.position - 1
+    elif after:
+        # вставить после задачи
+        new_position = after.position + 1
+    else:
+        # колонка пустая
+        new_position = 0
 
     task.column_id = new_column.id
-
-    tasks = get_tasks(new_column)
-    tasks.sort(key=lambda t: t.position)
-    for i in range(new_position, len(tasks)):
-        tasks[i].position += 1
-        session.merge(tasks[i])
-
     task.position = new_position
-    session.merge(task)
+
+    session.add(task)
     session.commit()
     session.refresh(task)
 

@@ -15,7 +15,7 @@ class Priority(int, enum.Enum):
 
 class TaskPublic(BaseModel):
     id: int
-    position: int
+    position: float
     title: str
     description: str | None
     priority: Priority | None
@@ -35,10 +35,14 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    column_id: UnsetType | int = Unset
-    position: UnsetType | int = Unset
     title: UnsetType | str = Unset
     description: UnsetType | str | None = Unset
     priority: UnsetType | Priority | None = Unset
     assignee_id: UnsetType | int | None = Unset
     due_date: UnsetType | date | None = Unset
+
+
+class MoveTaskPayload(BaseModel):
+    new_column_id: int
+    before_id: int | None = None
+    after_id: int | None = None

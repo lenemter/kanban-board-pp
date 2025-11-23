@@ -8,7 +8,7 @@ from api.schemas.task import Priority
 class Task(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     column_id: int = Field(foreign_key="column.id", ondelete="CASCADE")
-    position: int = Field()
+    position: float = Field(index=True)
     title: str = Field()
     description: str | None = Field()
     priority: Priority | None = Field()

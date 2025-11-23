@@ -209,6 +209,10 @@ class ApiClient {
     });
   }
 
+  async getBoardTaskCount(boardId) {
+    return this.request(`/boards/${boardId}/n-tasks`, { method: 'GET' });
+  }
+
   async deleteBoardTag(tagId, boardId) {
     return this.request(`/board-tags/${tagId}?board_id=${boardId}`, {
       method: 'DELETE',
@@ -259,6 +263,7 @@ class ApiClient {
   }
 
   async updateTask(taskId, data) {
+    console.log('Updating task with data:', data);
     return this.request(`/tasks/${taskId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

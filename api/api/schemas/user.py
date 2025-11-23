@@ -30,6 +30,7 @@ class PasswordStr(str):
 class UserPublic(BaseModel):
     id: int
     email: EmailStr
+    name: str
     is_verified: bool
 
 
@@ -41,4 +42,5 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     email: UnsetType | EmailStr = Unset
+    name: UnsetType | str = Unset
     password: UnsetType | PasswordStr = Unset

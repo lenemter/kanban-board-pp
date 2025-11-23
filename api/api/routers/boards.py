@@ -28,6 +28,16 @@ async def create_board(current_user: api.dependencies.CurrentUserDep, board_crea
     return board
 
 
+@router.get("/boards/{board_id}/n-columns")
+async def get_board_n_columns(board: api.dependencies.BoardViewAccessDep) -> int:
+    return api.db.get_n_columns(board)
+
+
+@router.get("/boards/{board_id}/n-tasks")
+async def get_board_n_tasks(board: api.dependencies.BoardViewAccessDep) -> int:
+    return api.db.get_n_tasks(board)
+
+
 @router.get("/boards/{board_id}", response_model=api.schemas.BoardPublic)
 async def get_board(board: api.dependencies.BoardViewAccessDep):
     return board

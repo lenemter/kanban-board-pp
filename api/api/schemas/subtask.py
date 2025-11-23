@@ -17,5 +17,5 @@ class SubtaskCreate(BaseModel):
 
 
 class SubtaskUpdate(BaseModel):
-    is_done: UnsetType | str = Unset
+    is_done: UnsetType | bool = Unset
     title: UnsetType | str = Unset

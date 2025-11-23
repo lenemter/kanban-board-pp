@@ -197,6 +197,17 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
             console.error('Failed to add comment:', err);
             setError('Failed to add comment.');
         }
+
+    const users = boardUsers || [];
+
+    const userMap = users.length > 0 ?
+        Object.fromEntries(users.map(u => [
+            u.id,
+            u.name && u.name.trim() !== '' ? u.name : (u.email || `User #${u.id}`)
+        ]))
+        : {};
+
+    const getUserName = (userId) => userMap[userId] || 'Unknown User';
     };
 
 

@@ -8,9 +8,12 @@ router = APIRouter(tags=["task comments"])
 
 
 @router.get("/tasks/{task_id}/comments", response_model=list[api.schemas.TaskCommentPublic])
-async def get_task_comments(board_column_and_task: api.dependencies.BoardColumnTaskDep):
+async def get_task_comments(
+    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    session: api.dependencies.SessionDep,
+):
     _, _, task = board_column_and_task
-    return api.db.get_task_comments(task)
+    return api.db.get_task_comments(session, task)
 
 
 @router.post(
@@ -22,9 +25,10 @@ async def create_task_comment(
     board_column_and_task: api.dependencies.BoardColumnTaskDep,
     task_comment_create: api.schemas.TaskCommentCreate,
     current_user: api.dependencies.CurrentUserDep,
+    session: api.dependencies.SessionDep,
 ):
     _, _, task = board_column_and_task
-    return api.db.create_task_comment(task, current_user, **task_comment_create.model_dump(exclude_unset=True))
+    return api.db.create_task_comment(session, task, current_user, **task_comment_create.model_dump(exclude_unset=True))
 
 
 @router.patch("/comments/{task_comment_id}", response_model=api.schemas.TaskCommentPublic)

@@ -6,31 +6,29 @@ if TYPE_CHECKING:
     from .. import Board, BoardTag
 
 
-def get_board_tags(board: Board) -> list[BoardTag]:
-    from .. import engine, BoardTag
+def get_board_tags(session: Session, board: Board) -> list[BoardTag]:
+    from .. import BoardTag
 
-    with Session(engine) as session:
-        return list(
-            session.exec(
-                select(BoardTag).where(
-                    BoardTag.board_id == board.id
-                )
-            ).all()
-        )
+    return list(
+        session.exec(
+            select(BoardTag).where(
+                BoardTag.board_id == board.id
+            )
+        ).all()
+    )
 
 
-def create_board_tag(board: Board, **kwargs) -> BoardTag:
-    from .. import engine, BoardTag
+def create_board_tag(session: Session, board: Board, **kwargs) -> BoardTag:
+    from .. import BoardTag
 
     assert board.id is not None
 
-    with Session(engine) as session:
-        new_tag = BoardTag(board_id=board.id, **kwargs)
-        session.add(new_tag)
-        session.commit()
-        session.refresh(new_tag)
+    new_tag = BoardTag(board_id=board.id, **kwargs)
+    session.add(new_tag)
+    session.commit()
+    session.refresh(new_tag)
 
-        return new_tag
+    return new_tag
 
 
 def update_board_tag(session: Session, tag: BoardTag, **kwargs) -> BoardTag:

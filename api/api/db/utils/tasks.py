@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 if TYPE_CHECKING:
-    from .. import Column, Task, TaskTag
+    from .. import Board, Column, Task, TaskTag
 
 
 def get_task(session: Session, task_id: int) -> Task | None:
@@ -12,25 +12,35 @@ def get_task(session: Session, task_id: int) -> Task | None:
     return session.get(Task, task_id)
 
 
-def get_tasks(column: Column) -> list[Task]:
-    from .. import engine, Task
+def get_tasks(session: Session, column: Column) -> list[Task]:
+    from .. import Task
 
-    with Session(engine) as session:
-        return list(
-            session.exec(
-                select(Task)
-                .where(Task.column_id == column.id)
-                .order_by(Task.position)  # type: ignore
-            ).all()
-        )
+    return list(
+        session.exec(
+            select(Task)
+            .where(Task.column_id == column.id)
+            .order_by(Task.position)  # type: ignore
+        ).all()
+    )
 
 
-def create_task(session: Session, column: Column, **kwargs) -> Task:
+def get_n_tasks(session: Session, board: Board) -> int:
+    from .. import Column, Task
+
+    return session.exec(
+        select(func.count(Task.id))  # type: ignore
+        .select_from(Task)
+        .join(Column, Column.id == Task.column_id)  # type: ignore
+        .where(Column.board_id == board.id)
+    ).one()
+
+
+def create_task(session: Session, board: Board, column: Column, **kwargs) -> Task:
     from .. import Task
 
     assert column.id is not None
 
-    new_task = Task(column_id=column.id, position=len(get_tasks(column)), **kwargs)
+    new_task = Task(column_id=column.id, position=get_n_tasks(session, board), **kwargs)
     session.add(new_task)
     session.commit()
     session.refresh(new_task)
@@ -79,15 +89,14 @@ def move_task(
     return task
 
 
-def create_task_tag(task: Task, **kwargs) -> TaskTag:
-    from .. import engine, TaskTag
+def create_task_tag(session: Session, task: Task, **kwargs) -> TaskTag:
+    from .. import TaskTag
 
     assert task.id is not None
 
-    with Session(engine) as session:
-        new_task_tag = TaskTag(task_id=task.id, **kwargs)
-        session.add(new_task_tag)
-        session.commit()
-        session.refresh(new_task_tag)
+    new_task_tag = TaskTag(task_id=task.id, **kwargs)
+    session.add(new_task_tag)
+    session.commit()
+    session.refresh(new_task_tag)
 
-        return new_task_tag
+    return new_task_tag

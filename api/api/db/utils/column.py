@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from sqlalchemy import func
 from sqlmodel import Session, select
 
 if TYPE_CHECKING:
@@ -12,31 +13,35 @@ def get_column_by_id(session: Session, column_id: int) -> Column | None:
     return session.get(Column, column_id)
 
 
-def get_columns(board: Board) -> list[Column]:
-    from .. import engine, Column
+def get_columns(session: Session, board: Board) -> list[Column]:
+    from .. import Column
 
-    with Session(engine) as session:
-        return list(
-            session.exec(
-                select(Column).where(
-                    Column.board_id == board.id
-                )
-            ).all()
-        )
+    return list(
+        session.exec(
+            select(Column).where(
+                Column.board_id == board.id
+            )
+        ).all()
+    )
 
 
-def create_column(board: Board, **kwargs) -> Column:
-    from .. import engine, Column
+def get_n_columns(session: Session, board: Board) -> int:
+    from .. import Column
+
+    return session.exec(select(func.count()).select_from(Column).where(Column.board_id == board.id)).one()
+
+
+def create_column(session: Session, board: Board, **kwargs) -> Column:
+    from .. import Column
 
     assert board.id is not None
 
-    with Session(engine) as session:
-        new_column = Column(board_id=board.id, position=len(get_columns(board)), **kwargs)
-        session.add(new_column)
-        session.commit()
-        session.refresh(new_column)
+    new_column = Column(board_id=board.id, position=get_n_columns(session, board), **kwargs)
+    session.add(new_column)
+    session.commit()
+    session.refresh(new_column)
 
-        return new_column
+    return new_column
 
 
 def update_column(session: Session, column: Column, **kwargs) -> Column:

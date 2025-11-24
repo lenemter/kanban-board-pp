@@ -6,33 +6,31 @@ if TYPE_CHECKING:
     from .. import User, Task, TaskComment
 
 
-def get_task_comments(task: Task) -> list[TaskComment]:
-    from .. import engine, TaskComment
+def get_task_comments(session: Session, task: Task) -> list[TaskComment]:
+    from .. import TaskComment
 
-    with Session(engine) as session:
-        return list(
-            session.exec(
-                select(TaskComment).where(
-                    TaskComment.task_id == task.id
-                )
+    return list(
+        session.exec(
+            select(TaskComment).where(
+                TaskComment.task_id == task.id
             )
         )
+    )
 
 
-def create_task_comment(task: Task, author: User | None, **kwargs) -> TaskComment:
-    from .. import engine, TaskComment
+def create_task_comment(session: Session, task: Task, author: User | None, **kwargs) -> TaskComment:
+    from .. import TaskComment
 
     assert task.id is not None
 
     created_by = author.id if author is not None else None
 
-    with Session(engine) as session:
-        new_task_comment = TaskComment(task_id=task.id, author=created_by, **kwargs)
-        session.add(new_task_comment)
-        session.commit()
-        session.refresh(new_task_comment)
+    new_task_comment = TaskComment(task_id=task.id, author=created_by, **kwargs)
+    session.add(new_task_comment)
+    session.commit()
+    session.refresh(new_task_comment)
 
-        return new_task_comment
+    return new_task_comment
 
 
 def update_task_comment(session: Session, task_comment: TaskComment, **kwargs) -> TaskComment:

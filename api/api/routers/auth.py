@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request,
 from fastapi.security import OAuth2PasswordRequestForm
 import jwt
 import bcrypt
+from sqlmodel import Session
 
 import api.db
 import api.dependencies
@@ -22,8 +23,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
-def authenticate_user(email: str, password: str) -> api.db.User | None:
-    user = api.db.get_user_by_email(email)
+def authenticate_user(session: Session, email: str, password: str) -> api.db.User | None:
+    user = api.db.get_user_by_email(session, email)
     if user is None:
         return None
     if not verify_password(password, user.hashed_password):
@@ -51,7 +52,7 @@ async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: api.dependencies.SessionDep
 ) -> api.schemas.Token:
-    user = authenticate_user(form_data.username, form_data.password)
+    user = authenticate_user(session, form_data.username, form_data.password)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,10 +79,11 @@ async def register(
     user_create: api.schemas.UserCreate,
     session: api.dependencies.SessionDep
 ) -> dict:
-    if api.db.get_user_by_email(user_create.email) is not None:
+    if api.db.get_user_by_email(session, user_create.email) is not None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Email already taken")
 
     new_user = api.db.register_user(
+        session,
         email=user_create.email,
         hashed_password=api.utils.get_password_hash(user_create.password),
         name=user_create.name,
@@ -115,7 +117,7 @@ def resend_verification(
     background_tasks: BackgroundTasks,
     session: api.dependencies.SessionDep
 ) -> dict:
-    user = authenticate_user(form_data.username, form_data.password)
+    user = authenticate_user(session, form_data.username, form_data.password)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

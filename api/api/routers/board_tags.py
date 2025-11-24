@@ -8,13 +8,17 @@ router = APIRouter(tags=["boards tag"])
 
 
 @router.get("/boards/{board_id}/tags", response_model=list[api.schemas.BoardTagPublic])
-async def get_board_tags(board: api.dependencies.BoardViewAccessDep):
-    return api.db.get_board_tags(board)
+async def get_board_tags(board: api.dependencies.BoardViewAccessDep, session: api.dependencies.SessionDep):
+    return api.db.get_board_tags(session, board)
 
 
 @router.post("/boards/{board_id}/tags", status_code=status.HTTP_201_CREATED, response_model=api.schemas.BoardTagPublic)
-async def create_tag(board: api.dependencies.BoardCollaboratorAccessDep, board_tag_create: api.schemas.BoardTagCreate):
-    return api.db.create_board_tag(board, **board_tag_create.model_dump())
+async def create_tag(
+    board: api.dependencies.BoardCollaboratorAccessDep,
+    board_tag_create: api.schemas.BoardTagCreate,
+    session: api.dependencies.SessionDep,
+):
+    return api.db.create_board_tag(session, board, **board_tag_create.model_dump())
 
 
 @router.get("/board-tags/{tag_id}", response_model=api.schemas.BoardTagPublic)

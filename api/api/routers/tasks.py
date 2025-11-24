@@ -23,7 +23,7 @@ def validate_new_assignee(session: Session, board: api.db.Board, assignee_id: in
     if assignee_id is None:
         return None
 
-    assigned_user = api.db.get_user_by_id(assignee_id)
+    assigned_user = api.db.get_user_by_id(session, assignee_id)
     if assigned_user is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "This user doesn't exist")
 
@@ -34,9 +34,9 @@ def validate_new_assignee(session: Session, board: api.db.Board, assignee_id: in
 
 
 @router.get("/columns/{column_id}/tasks", response_model=list[api.schemas.TaskPublic])
-async def get_tasks(board_and_column: api.dependencies.BoardColumnDep):
+async def get_tasks(board_and_column: api.dependencies.BoardColumnDep, session: api.dependencies.SessionDep):
     _, column = board_and_column
-    return api.db.get_tasks(column)
+    return api.db.get_tasks(session, column)
 
 
 @router.post("/columns/{column_id}/tasks", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskPublic)
@@ -50,7 +50,7 @@ async def add_task(
 
     validate_new_assignee(session, board, task_create.assignee_id)
 
-    return api.db.create_task(session, column, author=current_user.id, **task_create.model_dump())
+    return api.db.create_task(session, board, column, author=current_user.id, **task_create.model_dump())
 
 
 @router.get("/tasks/{task_id}", response_model=api.schemas.TaskPublic)
@@ -68,16 +68,16 @@ async def update_task(
     board, column, task = board_column_and_task
 
     if not isinstance(task_update.assignee_id, api.schemas.UnsetType) and task.assignee_id != task_update.assignee_id:
-        old_assignee = api.db.get_user_by_id(task.assignee_id)
+        old_assignee = api.db.get_user_by_id(session, task.assignee_id)
         if old_assignee is not None:
-            api.db.create_task_comment(task, None, content=f"Unassigned {old_assignee.name}")
+            api.db.create_task_comment(session, task, None, content=f"Unassigned {old_assignee.name}")
 
         new_assignee = validate_new_assignee(session, board, task_update.assignee_id)
         if new_assignee is not None:
-            api.db.create_task_comment(task, None, content=f"Assigned {new_assignee.name}")
+            api.db.create_task_comment(session, task, None, content=f"Assigned {new_assignee.name}")
 
     if not isinstance(task_update.title, api.schemas.UnsetType) and task_update.title != task.title:
-        api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
+        api.db.create_task_comment(session, task, None, content=f"~~{task.title}~~ {task_update.title}")
 
     return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
 
@@ -115,9 +115,10 @@ async def delete_task(
 async def add_task_tag(
     board_column_and_task: api.dependencies.BoardColumnTaskDep,
     task_tag_create: api.schemas.TaskTagCreate,
+    session: api.dependencies.SessionDep,
 ):
     _, _, task = board_column_and_task
-    return api.db.create_task_tag(task, **task_tag_create.model_dump(exclude_unset=True))
+    return api.db.create_task_tag(session, task, **task_tag_create.model_dump(exclude_unset=True))
 
 
 @router.delete("/task-tags/{task_tag_id}", status_code=status.HTTP_204_NO_CONTENT)

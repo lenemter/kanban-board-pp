@@ -14,8 +14,8 @@ async def get_user_me(current_user: api.dependencies.CurrentUserDep):
 
 
 @router.get("/users/id/{user_id}", response_model=api.schemas.UserPublic)
-async def get_user_by_id(_: api.dependencies.CurrentUserDep, user_id: int):
-    user = api.db.get_user_by_id(user_id)
+async def get_user_by_id(_: api.dependencies.CurrentUserDep, user_id: int, session: api.dependencies.SessionDep):
+    user = api.db.get_user_by_id(session, user_id)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
 
@@ -23,8 +23,8 @@ async def get_user_by_id(_: api.dependencies.CurrentUserDep, user_id: int):
 
 
 @router.get("/users/email/{email}", response_model=api.schemas.UserPublic)
-async def get_user_by_email(_: api.dependencies.CurrentUserDep, email: str):
-    user = api.db.get_user_by_email(email)
+async def get_user_by_email(_: api.dependencies.CurrentUserDep, email: str, session: api.dependencies.SessionDep):
+    user = api.db.get_user_by_email(session, email)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
 

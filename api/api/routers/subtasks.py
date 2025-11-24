@@ -8,9 +8,9 @@ router = APIRouter(tags=["subtasks"])
 
 
 @router.get("/tasks/{task_id}/subtasks", response_model=list[api.schemas.SubtaskPublic])
-async def get_subtask(board_column_and_task: api.dependencies.BoardColumnTaskDep):
+async def get_subtask(board_column_and_task: api.dependencies.BoardColumnTaskDep, session: api.dependencies.SessionDep):
     _, _, task = board_column_and_task
-    return api.db.get_subtasks(task)
+    return api.db.get_subtasks(session, task)
 
 
 @router.post(
@@ -20,10 +20,11 @@ async def get_subtask(board_column_and_task: api.dependencies.BoardColumnTaskDep
 )
 async def create_subtask(
     board_column_and_task: api.dependencies.BoardColumnTaskDep,
-    subtask_create: api.schemas.SubtaskCreate
+    subtask_create: api.schemas.SubtaskCreate,
+    session: api.dependencies.SessionDep,
 ):
     _, _, task = board_column_and_task
-    return api.db.create_subtask(task, **subtask_create.model_dump(exclude_unset=True))
+    return api.db.create_subtask(session, task, **subtask_create.model_dump(exclude_unset=True))
 
 
 @router.patch("/subtasks/{subtask_id}", response_model=api.schemas.SubtaskPublic)

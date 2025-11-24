@@ -5,18 +5,16 @@ if TYPE_CHECKING:
     from .. import User
 
 
-def get_user_by_id(user_id: int | None) -> User | None:
-    from .. import engine, User
+def get_user_by_id(session: Session, user_id: int | None) -> User | None:
+    from .. import User
 
-    with Session(engine) as session:
-        return session.exec(select(User).where(User.id == user_id)).first()
+    return session.get(User, user_id)
 
 
-def get_user_by_email(email: str) -> User | None:
-    from .. import engine, User
+def get_user_by_email(session: Session, email: str) -> User | None:
+    from .. import User
 
-    with Session(engine) as session:
-        return session.exec(select(User).where(User.email == email)).first()
+    return session.exec(select(User).where(User.email == email)).first()
 
 
 def get_user_by_verification_token(session: Session, token: str) -> User | None:
@@ -25,16 +23,15 @@ def get_user_by_verification_token(session: Session, token: str) -> User | None:
     return session.exec(select(User).where(User.verification_token == token)).first()
 
 
-def register_user(**kwargs) -> User:
-    from .. import engine, User
+def register_user(session: Session, **kwargs) -> User:
+    from .. import User
 
-    with Session(engine) as session:
-        new_user = User(**kwargs)
-        session.add(new_user)
-        session.commit()
-        session.refresh(new_user)
+    new_user = User(**kwargs)
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)
 
-        return new_user
+    return new_user
 
 
 def update_user(session: Session, user: User, **kwargs) -> User:

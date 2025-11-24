@@ -8,34 +8,38 @@ router = APIRouter(tags=["boards"])
 
 
 @router.get("/boards", response_model=list[api.schemas.BoardPublic])
-async def get_owned_boards(current_user: api.dependencies.CurrentUserDep):
-    return api.db.get_owned_boards(current_user.id)
+async def get_owned_boards(current_user: api.dependencies.CurrentUserDep, session: api.dependencies.SessionDep):
+    return api.db.get_owned_boards(session, current_user.id)
 
 
 @router.get("/boards/shared", response_model=list[api.schemas.BoardPublic])
-async def get_shared_boards(current_user: api.dependencies.CurrentUserDep):
-    return api.db.get_shared_boards(current_user.id)
+async def get_shared_boards(current_user: api.dependencies.CurrentUserDep, session: api.dependencies.SessionDep):
+    return api.db.get_shared_boards(session, current_user.id)
 
 
 @router.post("/boards", status_code=status.HTTP_201_CREATED, response_model=api.schemas.BoardPublic)
-async def create_board(current_user: api.dependencies.CurrentUserDep, board_create: api.schemas.BoardCreate):
-    board = api.db.create_board(current_user, **board_create.model_dump())
+async def create_board(
+    current_user: api.dependencies.CurrentUserDep,
+    board_create: api.schemas.BoardCreate,
+    session: api.dependencies.SessionDep,
+):
+    board = api.db.create_board(session, current_user, **board_create.model_dump())
 
-    api.db.create_column(board, name="To Do")
-    api.db.create_column(board, name="In Progress")
-    api.db.create_column(board, name="Done")
+    api.db.create_column(session, board, name="To Do")
+    api.db.create_column(session, board, name="In Progress")
+    api.db.create_column(session, board, name="Done")
 
     return board
 
 
 @router.get("/boards/{board_id}/n-columns")
-async def get_board_n_columns(board: api.dependencies.BoardViewAccessDep) -> int:
-    return api.db.get_n_columns(board)
+async def get_board_n_columns(board: api.dependencies.BoardViewAccessDep, session: api.dependencies.SessionDep) -> int:
+    return api.db.get_n_columns(session, board)
 
 
 @router.get("/boards/{board_id}/n-tasks")
-async def get_board_n_tasks(board: api.dependencies.BoardViewAccessDep) -> int:
-    return api.db.get_n_tasks(board)
+async def get_board_n_tasks(board: api.dependencies.BoardViewAccessDep, session: api.dependencies.SessionDep) -> int:
+    return api.db.get_n_tasks(session, board)
 
 
 @router.get("/boards/{board_id}", response_model=api.schemas.BoardPublic)
@@ -68,7 +72,7 @@ def get_board_users(board: api.dependencies.BoardCollaboratorAccessDep, session:
     response_model=api.schemas.BoardUserAccessPublic
 )
 def add_user_to_board(board: api.dependencies.BoardOwnerAccessDep, email: str, session: api.dependencies.SessionDep):
-    user = api.db.get_user_by_email(email)
+    user = api.db.get_user_by_email(session, email)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't exist")
 
@@ -81,7 +85,7 @@ async def remove_user_from_board(
     user_id: int,
     session: api.dependencies.SessionDep
 ) -> None:
-    user = api.db.get_user_by_id(user_id)
+    user = api.db.get_user_by_id(session, user_id)
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "User doesn't exist")
 

@@ -16,13 +16,17 @@ def validate_move(column: api.db.Column, before: api.db.Column | None, after: ap
 
 
 @router.get("/boards/{board_id}/columns", response_model=list[api.schemas.ColumnPublic])
-async def get_columns(board: api.dependencies.BoardViewAccessDep):
-    return api.db.get_columns(board)
+async def get_columns(board: api.dependencies.BoardViewAccessDep, session: api.dependencies.SessionDep):
+    return api.db.get_columns(session, board)
 
 
 @router.post("/boards/{board_id}/columns", status_code=status.HTTP_201_CREATED, response_model=api.schemas.ColumnPublic)
-async def create_column(board: api.dependencies.BoardCollaboratorAccessDep, column_create: api.schemas.ColumnCreate):
-    return api.db.create_column(board, **column_create.model_dump())
+async def create_column(
+    board: api.dependencies.BoardCollaboratorAccessDep,
+    column_create: api.schemas.ColumnCreate,
+    session: api.dependencies.SessionDep,
+):
+    return api.db.create_column(session, board, **column_create.model_dump())
 
 
 @router.get("/columns/{column_id}", response_model=api.schemas.ColumnPublic)

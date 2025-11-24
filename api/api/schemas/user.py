@@ -16,6 +16,14 @@ class PasswordStr(str):
         return pydantic_core.core_schema.no_info_plain_validator_function(cls._validate)
 
     @classmethod
+    def __get_pydantic_json_schema__(
+        cls,
+        _core_schema: pydantic_core.core_schema.CoreSchema,
+        handler: pydantic.GetJsonSchemaHandler
+    ) -> pydantic.json_schema.JsonSchemaValue:
+        return handler(pydantic_core.core_schema.str_schema())
+
+    @classmethod
     def _validate(cls, value: Any) -> Union[str, None]:
         if value is None:
             return None

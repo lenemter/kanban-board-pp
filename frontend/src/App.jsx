@@ -11,7 +11,7 @@ import CreateColumnModal from './components/CreateColumnModal';
 import apiClient from './api';
 import ConfirmModal from './components/ConfirmModal';
 // Прочее
-import { UserPlus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'; // Объединены и добавлен Trash2
+import { UserPlus, Trash2, User } from 'lucide-react';
 
 // Утилита для преобразования данных API в формат фронтенда
 const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers = []) => {
@@ -498,7 +498,7 @@ function App() {
               <button
                 className="btn-link danger"
                 onClick={() => handleRequestDeleteBoard(board)}
-                title="Удалить доску"
+                title="Delete board"
               >
                 <Trash2 size={18} />
               </button>
@@ -524,7 +524,7 @@ function App() {
               ))}
 
               <button
-                className="btn-link new-board-btn"
+                className="board-item btn-link new-board-btn"
                 onClick={() => setShowCreateBoard(true)}
               >
                 + New Board
@@ -534,7 +534,9 @@ function App() {
         </div>
 
         <div className="sidebar-bottom">
-          <button className="account-btn" onClick={() => setShowAccount(true)}>Account</button>
+          <button className="account-btn" onClick={() => setShowAccount(true)}>
+            <User size={16} /> <span>Account</span>
+          </button>
         </div>
       </aside>
 
@@ -624,7 +626,7 @@ function App() {
             setConfirmInput('');
           }}
           onConfirm={handleConfirmDeleteBoard}
-          title={`Удаление доски "${boardToDeleteName}"`}
+          title={`Delete Board "${boardToDeleteName}"?`}
           confirmText={boardTaskCount > 0 ? boardToDeleteName : null}
           confirmInput={confirmInput}
           setConfirmInput={setConfirmInput}

@@ -70,7 +70,7 @@ html,
 .sidebar {
     width: 220px;
     background: #1F1838;
-    padding: 24px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -93,15 +93,39 @@ html,
 }
 
 .sidebar-bottom {
-    padding-top: 12px;
+    padding-top: 16px;
+    position: relative; /* for the separator pseudo-element */
+}
+
+/* separator above the account area */
+.sidebar-bottom::before {
+    content: "";
+    display: block;
+    height: 1px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    margin-bottom: 12px;
+    border-radius: 1px;
 }
 
 .account-btn {
     background: transparent;
-    border: 1px solid var(--border);
+    border: 0px;
     padding: 8px 10px;
     color: var(--text-primary);
     cursor: pointer;
+
+    width: 100%;
+
+    /* ensure icon + text are vertically + horizontally centered and spaced */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    line-height: 1;
+
+    /* keep button height consistent */
+    height: 40px;
 }
 
 .main-area {
@@ -211,6 +235,110 @@ html,
     font-weight: 600;
 }
 
+/* Prevent long words from overflowing containers globally */
+*,
+*::before,
+*::after {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Utility classes */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line clamp (fallback to ellipsis if supported) */
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+/* Targeted fixes for common overflow points */
+.col-title {
+  /* keep column title on single line and truncate if too long */
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-item {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card title single-line truncation */
+.card-title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card description: allow up to ~3 lines and then truncate */
+.card-desc {
+  /* prefer multi-line clamp where supported, fallback allows wrapping */
+  max-width: 100%;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Sidebar user cards */
+.user-name,
+.user-email {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Truncate assignee shown on card footer */
+.card-footer .meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px; /* keep reasonable width for footer metadata */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ensure buttons and labels don't overflow their containers */
+.btn,
+.icon-btn,
+.account-btn,
+.add-column-button,
+.modal-title-edit,
+input,
+select,
+textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* small tweak: make column header layout prevent title shrink collisions */
+.column-header .col-title-wrap {
+  min-width: 0; /* allow ellipsis to work inside flex container */
+}
+
 .col-actions {
     display: flex;
     gap: 4px;
@@ -261,7 +389,22 @@ html,
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: pointer; /* make whole area clickable */
+    padding: 12px;
+    min-width: 300px;
+}
+
+/* make label look and behave like a full-width control inside the column */
+.column.add-column .add-column-button {
+    background: var(--accent);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    /* width: 100%; */
+    max-width: 280px;
+    box-shadow: none;
 }
 
 .col-title-wrap {
@@ -602,7 +745,8 @@ html,
     cursor: pointer;
     border-radius: 4px;
     font-weight: 500;
-    margin-left: -10px; 
+    /* margin-left: -10px;  */
+    width: 100%;
 }
 
 .board-item.active {
@@ -612,8 +756,7 @@ html,
 }
 
 .new-board-btn {
-    margin-top: 8px;
-    color: var(--muted); 
+    color: var(--text-secondary);
 }
 
 .task-details-modal {

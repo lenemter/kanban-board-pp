@@ -166,13 +166,19 @@ function Board({
               
               {provided.placeholder}
 
-              <div className={`column add-column ${snapshot.isDraggingOver ? 'drag-over' : ''}`}>
-                <button
-                  className="btn primary"
-                  onClick={onOpenCreateColumn}
-                >
-                  + Add Column
-                </button>
+              <div
+                className={`column add-column ${snapshot.isDraggingOver ? 'drag-over' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={onOpenCreateColumn}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onOpenCreateColumn();
+                  }
+                }}
+              >
+                <div className="add-column-button">+ Add Column</div>
               </div>
             </div>
           )}

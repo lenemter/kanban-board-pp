@@ -1,9 +1,7 @@
 from typing import Any, Union
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 import pydantic
 import pydantic_core
-
-from .unset_type import Unset, UnsetType
 
 
 class PasswordStr(str):
@@ -41,6 +39,6 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    email: UnsetType | EmailStr = Unset
-    name: UnsetType | str = Unset
-    password: UnsetType | PasswordStr = Unset
+    email: EmailStr = Field(default=...)
+    name: str = Field(default=...)
+    password: PasswordStr = Field(default=...)

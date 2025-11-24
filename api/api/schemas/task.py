@@ -1,10 +1,9 @@
 from datetime import date, datetime
 import enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .task_tag import TaskTagPublic
-from .unset_type import Unset, UnsetType
 
 
 class Priority(int, enum.Enum):
@@ -35,11 +34,11 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    title: UnsetType | str = Unset
-    description: UnsetType | str | None = Unset
-    priority: UnsetType | Priority | None = Unset
-    assignee_id: UnsetType | int | None = Unset
-    due_date: UnsetType | date | None = Unset
+    title: str = Field(default=...)
+    description: str | None = Field(default=...)
+    priority: Priority | None = Field(default=...)
+    assignee_id: int | None = Field(default=...)
+    due_date: date | None = Field(default=...)
 
 
 class MoveTaskPayload(BaseModel):

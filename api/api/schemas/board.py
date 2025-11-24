@@ -1,6 +1,4 @@
-from pydantic import BaseModel
-
-from .unset_type import Unset, UnsetType
+from pydantic import BaseModel, Field
 
 
 class BoardPublic(BaseModel):
@@ -15,5 +13,5 @@ class BoardCreate(BaseModel):
 
 
 class BoardUpdate(BaseModel):
-    name: UnsetType | str = Unset
-    is_public: UnsetType | str = Unset
+    name: str = Field(default=...)
+    is_public: bool = Field(default=...)

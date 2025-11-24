@@ -1,6 +1,4 @@
-from pydantic import BaseModel
-
-from .unset_type import Unset, UnsetType
+from pydantic import BaseModel, Field
 
 
 class BoardTagPublic(BaseModel):
@@ -15,5 +13,5 @@ class BoardTagCreate(BaseModel):
 
 
 class BoardTagUpdate(BaseModel):
-    name: UnsetType | str = Unset
-    color: UnsetType | str = Unset
+    name: str = Field(default=...)
+    color: str = Field(default=...)

@@ -76,7 +76,7 @@ async def update_task(
 ):
     board, column, task = board_column_and_task
 
-    if not isinstance(task_update.assignee_id, api.schemas.UnsetType) and task.assignee_id != task_update.assignee_id:
+    if "assignee_id" in task_update.model_fields_set and task.assignee_id != task_update.assignee_id:
         old_assignee = api.db.get_user_by_id(task.assignee_id)
         if old_assignee is not None:
             api.db.create_task_comment(task, None, content=f"Unassigned {old_assignee.name}")
@@ -85,7 +85,7 @@ async def update_task(
         if new_assignee is not None:
             api.db.create_task_comment(task, None, content=f"Assigned {new_assignee.name}")
 
-    if not isinstance(task_update.title, api.schemas.UnsetType) and task_update.title != task.title:
+    if "title" in task_update.model_fields_set and task_update.title != task.title:
         api.db.create_task_comment(task, None, content=f"~~{task.title}~~ {task_update.title}")
 
     return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))

@@ -2,8 +2,6 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from .unset_type import Unset, UnsetType
-
 
 class TaskCommentPublic(BaseModel):
     id: int
@@ -17,4 +15,4 @@ class TaskCommentCreate(BaseModel):
 
 
 class TaskCommentUpdate(BaseModel):
-    content: UnsetType | str = Unset
+    content: str

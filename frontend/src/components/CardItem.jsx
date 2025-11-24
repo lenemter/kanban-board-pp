@@ -1,6 +1,5 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-
 import { User, Clock, CheckSquare } from 'lucide-react'; 
 
 const PRIORITY_MAP = {
@@ -23,14 +22,13 @@ function CardItem({ card, index, onOpenEdit }) {
     if (!d) return '';
     const dt = new Date(d);
     if (!isNaN(dt)) {
-      // Format like "Oct 20"
       return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     return d;
   };
 
   return (
-    <Draggable draggableId={String(card.id)} index={index}>
+    <Draggable draggableId={`task-${card.id}`} index={index}>
       {(provided, snapshot) => (
         <div
           className={`card ${snapshot.isDragging ? 'dragging' : ''}`}
@@ -51,7 +49,9 @@ function CardItem({ card, index, onOpenEdit }) {
           
           <div className="card-footer">
             <div className="card-left-meta">
-                <div className={`chip priority-${ToDifficultyString(card.priority)?.toLowerCase() || 'low'}`}>{ToDifficultyString(card.priority)}</div>
+                <div className={`chip priority-${ToDifficultyString(card.priority)?.toLowerCase() || 'low'}`}>
+                  {ToDifficultyString(card.priority)}
+                </div>
             </div>
 
             <div className="meta">

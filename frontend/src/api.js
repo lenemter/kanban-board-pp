@@ -330,6 +330,24 @@ class ApiClient {
   async deleteSubtask(subtaskId) {
     return this.request(`/subtasks/${subtaskId}`, { method: 'DELETE' });
   }
+
+  // Move column
+  async moveColumn(columnId, data) {
+    return this.request(`/columns/${columnId}/move`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async moveTask(taskId, columnId, position) {
+    return this.request(`/tasks/${taskId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        column_id: columnId,
+        position: position
+      }),
+    });
+  }
 }
 
 // Создаем единственный экземпляр клиента

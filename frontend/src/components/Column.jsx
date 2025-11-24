@@ -7,16 +7,14 @@ function Column({ column, cards, index, onOpenCreate, onOpenEdit, onRequestDelet
   const cardCount = cards.length; 
 
   return (
-    // Draggable для колонки: column.id (число) преобразуем в строку
-    <Draggable draggableId={String(column.id)} index={index} type="column">
-      {(provided) => (
+    <Draggable draggableId={`column-${column.id}`} index={index}>
+      {(provided, snapshot) => (
         <div 
-          className="column"
+          className={`column ${snapshot.isDragging ? 'dragging' : ''}`}
           ref={provided.innerRef} 
           {...provided.draggableProps} 
         >
           <div className="column-header">
-            
             <div 
               className="drag-handle" 
               {...provided.dragHandleProps} 
@@ -37,7 +35,7 @@ function Column({ column, cards, index, onOpenCreate, onOpenEdit, onRequestDelet
             </div>
           </div>
 
-          <Droppable droppableId={String(column.id)} type="card">
+          <Droppable droppableId={`column-${column.id}`} type="task">
             {(provided, snapshot) => (
               <div 
                 ref={provided.innerRef} 

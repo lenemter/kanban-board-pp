@@ -42,7 +42,7 @@ async def update_column(
     return api.db.update_column(session, column, **column_update.model_dump(exclude_unset=True))
 
 
-@router.patch("columns/{task_id}/move", response_model=api.schemas.ColumnPublic)
+@router.patch("/columns/{column_id}/move", response_model=api.schemas.ColumnPublic)
 async def move_column(
     board_and_column: api.dependencies.BoardCollaboratorColumnDep,
     move_payload: api.schemas.MoveColumnPayload,

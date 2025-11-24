@@ -30,7 +30,7 @@ const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers
         id: col.id,
         title: col.name,
         card_ids: col.tasks
-          .sort((a, b) => a.position_in_column - b.position_in_column)
+          .sort((a, b) => a.position - b.position) // Сортируем по position
           .map(task => task.id),
       });
 
@@ -39,15 +39,11 @@ const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers
         let assigneeName = '';
         if (task.assignee_id) {
           assigneeId = task.assignee_id;
-        } else if (task.assignee && typeof task.assignee === 'number') {
-          assigneeId = task.assignee;
-        } else if (task.assignee && typeof task.assignee === 'string') {
-          assigneeName = task.assignee;
         }
 
         if (task.assignee_name) assigneeName = task.assignee_name;
         else if (!assigneeName && assigneeId) {
-          const u = (boardUsers || []).find(x => x.id === assigneeId || x.id === String(assigneeId));
+          const u = (boardUsers || []).find(x => x.id === assigneeId);
           assigneeName = u ? (u.name || u.email || u.id) : '';
         }
 
@@ -60,6 +56,7 @@ const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers
           due_date: task.due_date,
           assignee_id: assigneeId,
           assignee_name: assigneeName,
+          position: task.position || 0, // Добавляем позицию
         });
       });
     });
@@ -460,39 +457,8 @@ function App() {
 
   const handleMoveLocal = (newBoard) => {
     setBoard(newBoard);
-
-    (async () => {
-      if (!currentBoardId) return;
-      try {
-        const ids = newBoard.columns.map(c => c.id);
-        const n = ids.length;
-        const offset = n * 10;
-
-        for (let i = 0; i < n; i++) {
-          try {
-            await apiClient.updateColumn(ids[i], { position: i + offset });
-          } catch (err) {
-            console.error('Temporary position update failed for column', ids[i], err);
-          }
-        }
-
-        for (let i = 0; i < n; i++) {
-          try {
-            await apiClient.updateColumn(ids[i], { position: i });
-          } catch (err) {
-            console.error('Final position update failed for column', ids[i], err);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to persist column order:', error);
-        try {
-          await loadBoardData(currentBoardId);
-        } catch (e) {
-          console.error('Failed to reload board after failing to persist column order:', e);
-        }
-      }
-    })();
   };
+
 
   const handleOpenAddUserModal = (callback) => {
     setAssigneeCallback(() => callback);
@@ -594,19 +560,12 @@ function App() {
         <Board
           board={board}
           onMoveLocal={handleMoveLocal}
-          onTaskMove={async (taskId, destColumnId, destIndex) => {
-            try {
-              const columnIdNum = isNaN(Number(destColumnId)) ? destColumnId : Number(destColumnId);
-              await apiClient.updateTask(taskId, { column_id: columnIdNum, position: destIndex });
-            } catch (err) {
-              console.error('Failed to persist task move:', err);
-              try { if (currentBoardId) await loadBoardData(currentBoardId); } catch (e) { console.error(e); }
-            }
-          }}
           onOpenCreate={handleOpenCreate}
           onOpenEdit={handleOpenEdit}
           onOpenCreateColumn={() => setShowCreateColumn(true)}
           onRequestDeleteColumn={handleRequestDeleteColumn}
+          currentBoardId={currentBoardId}
+          onReloadBoard={() => loadBoardData(currentBoardId)}
         />
       </main>
 

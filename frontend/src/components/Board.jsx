@@ -122,7 +122,19 @@ function Board({
       onMoveLocal(newBoard);
 
       try {
-        await apiClient.moveTask(taskId, destColId, newPosition);
+        // compute before/after based on the updated destCol.card_ids in newBoard
+        const insertedIndex = destCol.card_ids.findIndex(id => Number(id) === taskId);
+        let before_id = null;
+        let after_id = null;
+        if (insertedIndex > 0) {
+          before_id = Number(destCol.card_ids[insertedIndex - 1]);
+        }
+        if (insertedIndex >= 0 && insertedIndex < destCol.card_ids.length - 1) {
+          after_id = Number(destCol.card_ids[insertedIndex + 1]);
+        }
+
+        // pass before_id and after_id to the API so it knows which tasks this one was moved between
+        await apiClient.moveTask(taskId, destColId, before_id, after_id);
       } catch (error) {
         console.error('Failed to persist task move:', error);
         if (onReloadBoard) onReloadBoard();

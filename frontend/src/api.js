@@ -339,12 +339,13 @@ class ApiClient {
     });
   }
 
-  async moveTask(taskId, columnId, position) {
-    return this.request(`/tasks/${taskId}`, {
+  async moveTask(taskId, columnId, before, after) {
+    return this.request(`/tasks/${taskId}/move`, {
       method: 'PATCH',
       body: JSON.stringify({
-        column_id: columnId,
-        position: position
+        new_column_id: columnId,
+        before_id: before,
+        after_id: after
       }),
     });
   }

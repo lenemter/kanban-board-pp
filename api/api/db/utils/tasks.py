@@ -62,10 +62,10 @@ def move_task(
         new_position = (before.position + after.position) / 2
     elif before:
         # вставить перед задачей
-        new_position = before.position - 1
+        new_position = before.position + 1
     elif after:
         # вставить после задачи
-        new_position = after.position + 1
+        new_position = after.position - 1
     else:
         # колонка пустая
         new_position = 0

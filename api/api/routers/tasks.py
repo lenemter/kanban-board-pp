@@ -80,7 +80,7 @@ async def update_task(
     return api.db.update_task(session, task, **task_update.model_dump(exclude_unset=True))
 
 
-@router.patch("tasks/{task_id}/move", response_model=api.schemas.TaskPublic)
+@router.patch("/tasks/{task_id}/move", response_model=api.schemas.TaskPublic)
 async def move_task(
     board_column_and_task: api.dependencies.BoardColumnTaskDep,
     move_payload: api.schemas.MoveTaskPayload,

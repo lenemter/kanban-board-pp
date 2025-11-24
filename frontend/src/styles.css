@@ -130,51 +130,41 @@ html,
 /* Списки тасков */
 .columns {
   display: flex;
-  gap: 18px;
   align-items: flex-start;
   width: max-content; 
   height: 100%;
-  padding-right: 20px;
-  transition: gap 0.2s ease; /* Плавное изменение расстояния */
 }
-
-.columns.column-dragging {
-  gap: 30px;
-}
-
-
 
 .column {
-    background: var(--panel);
-    width: 320px;
-    display: flex;
-    flex-shrink: 0;
-    flex-direction: column;
-    border-radius: 15px;
-    box-shadow: 0 0 0 1px var(--column-stroke);
-    height: 100%;
+  background: var(--panel);
+  width: 320px;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  border-radius: 15px;
+  box-shadow: 0 0 0 1px var(--panel-stroke);
+  height: 100%;
+
+  /* spacing moved to the column element so placeholder preserves it while dragging */
+  margin-right: 18px;
+
+  /* Prevent collapse when the DnD library applies inline styles during dragging */
+  min-width: 320px;
+  flex: 0 0 320px;
+}
+
+/* ensure the last visible column (and the add-column block) doesn't add extra space */
+.columns .column:last-child,
+.column.add-column {
+  margin-right: 0;
 }
 
 /* Стили для перетаскиваемой колонки */
 .column.dragging {
-  transform: rotate(5deg);
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
   opacity: 0.9;
   border: 2px solid rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
-}
-
-/* Стили для placeholder при перетаскивании колонки */
-.column-placeholder {
-  background: rgba(255, 255, 255, 0.05);
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 15px;
-  min-width: 320px;
-  height: 100%;
-}
-
-.column:hover .drag-handle {
-  opacity: 0.8;
 }
 
 .column:hover .drag-handle {

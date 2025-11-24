@@ -11,7 +11,7 @@ function Column({ column, cards, index, onOpenCreate, onOpenEdit, onRequestDelet
       {(provided, snapshot) => (
         <div 
           className={`column ${snapshot.isDragging ? 'dragging' : ''}`}
-          ref={provided.innerRef} 
+          ref={provided.innerRef}
           {...provided.draggableProps} 
         >
           <div className="column-header">

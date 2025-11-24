@@ -8,6 +8,7 @@ from .task_tag import TaskTagCreate, TaskTagPublic
 from .task_comment import TaskCommentCreate, TaskCommentPublic, TaskCommentUpdate
 from .subtask import SubtaskCreate, SubtaskPublic, SubtaskUpdate
 from .token import Token
+from .unset_type import UnsetType, Unset
 
 __all__ = [
     "UserCreate", "UserPublic", "UserUpdate",
@@ -20,4 +21,5 @@ __all__ = [
     "TaskCommentCreate", "TaskCommentPublic", "TaskCommentUpdate",
     "SubtaskCreate", "SubtaskPublic", "SubtaskUpdate",
     "Token",
+    "UnsetType", "Unset",
 ]

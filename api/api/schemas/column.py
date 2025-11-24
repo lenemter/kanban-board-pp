@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+from .unset_type import Unset, UnsetType
 
 
 class ColumnPublic(BaseModel):
@@ -13,6 +15,6 @@ class ColumnCreate(BaseModel):
 
 
 class ColumnUpdate(BaseModel):
-    position: int = Field(default=...)
-    name: str = Field(default=...)
-    tasks_limit: int | None = Field(default=...)
+    position: UnsetType | int = Unset
+    name: UnsetType | str = Unset
+    tasks_limit: UnsetType | int | None = Unset

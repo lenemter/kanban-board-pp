@@ -40,7 +40,7 @@ async def update_column(
 ):
     board, column = board_and_column
 
-    if "position" in column_update.model_fields_set and column_update.position != column.position:
+    if not isinstance(column_update.position, api.schemas.UnsetType) and column_update.position != column.position:
         validate_position(board, column_update.position)
 
     return api.db.update_column(session, column, **column_update.model_dump(exclude_unset=True))

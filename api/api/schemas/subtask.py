@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
+from .unset_type import Unset, UnsetType
 
 
 class SubtaskPublic(BaseModel):
@@ -15,5 +17,5 @@ class SubtaskCreate(BaseModel):
 
 
 class SubtaskUpdate(BaseModel):
-    is_done: bool = Field(default=...)
-    title: str = Field(default=...)
+    is_done: UnsetType | bool = Unset
+    title: UnsetType | str = Unset

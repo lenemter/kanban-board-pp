@@ -87,7 +87,6 @@ function App() {
   const [columnToDeleteId, setColumnToDeleteId] = useState(null);
   const [columnToDeleteTitle, setColumnToDeleteTitle] = useState('');
   const [assigneeCallback, setAssigneeCallback] = useState(null);
-  const [showBoardsMenu, setShowBoardsMenu] = useState(true);
 
   // СОСТОЯНИЕ КОЛОНКИ ДЛЯ СОЗДАНИЯ ЗАДАЧ
   const [taskCreationColumnId, setTaskCreationColumnId] = useState(null);
@@ -506,38 +505,31 @@ function App() {
             )}
           </div>
           <div className="boards-section">
-            <button
-              className="boards-toggle btn-link"
-              onClick={() => setShowBoardsMenu(!showBoardsMenu)}
-            >
-              Boards {showBoardsMenu ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+            <div className="boards-header">Boards</div>
 
-            {showBoardsMenu && (
-              <div className="boards-list">
-                {availableBoards.map(b => (
-                  <button
-                    key={b.id}
-                    className={`board-item btn-link ${b.id === currentBoardId ? 'active' : ''}`}
-                    onClick={() => {
-                      if (b.id !== currentBoardId) {
-                        setCurrentBoardId(b.id);
-                        loadBoardData(b.id);
-                      }
-                    }}
-                  >
-                    {b.name}
-                  </button>
-                ))}
-
+            <div className="boards-list">
+              {availableBoards.map(b => (
                 <button
-                  className="btn-link new-board-btn"
-                  onClick={() => setShowCreateBoard(true)}
+                  key={b.id}
+                  className={`board-item btn-link ${b.id === currentBoardId ? 'active' : ''}`}
+                  onClick={() => {
+                    if (b.id !== currentBoardId) {
+                      setCurrentBoardId(b.id);
+                      loadBoardData(b.id);
+                    }
+                  }}
                 >
-                  + New Board
+                  {b.name}
                 </button>
-              </div>
-            )}
+              ))}
+
+              <button
+                className="btn-link new-board-btn"
+                onClick={() => setShowCreateBoard(true)}
+              >
+                + New Board
+              </button>
+            </div>
           </div>
         </div>
 

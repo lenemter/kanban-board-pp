@@ -1,25 +1,54 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+
 /* Основные стили */
-:root {
-    --bg: #1A1625;
-    --panel: #251E30;
-    --panel-stroke: #2D2538;
-    --muted: #918794;
-    --accent: #fff;
-    --card: #312841;
-    --card-stroke: #3A3047;
-    --text: #A390AB;
-    --text-dark: #4A4459;
-    --primary-button-bg: #E8DEF8
-}
 
 * {
     box-sizing: border-box;
 }
 
+:root {
+    /* ===== Уровень 1 — Основные ===== */
+    --bg: #1A1430;
+    --surface: #241A3D;
+
+    /* ===== Уровень 2 — Контейнеры ===== */
+    --panel: #2D204C;
+    --card: #2A1E45;
+
+    /* ===== Уровень 3 — Детализация ===== */
+    --border: #3A2C56;
+    --panel-stroke: #3F3160;
+    --card-stroke: #3A2C56;
+
+    --shadow: rgba(18, 10, 38, 0.6);
+    --shadow-soft: rgba(55, 35, 95, 0.35);
+
+    /* ===== Текст ===== */
+    --text-primary: #F3ECFF;
+    --text-secondary: #B9A8E0;
+    --text: #F3ECFF;
+    --muted: #8B7BB8;
+    --text-dark: #1A1430;
+
+    /* ===== Акценты ===== */
+    --accent: #C58AFF;
+    --accent-hover: #D6A4FF;
+
+    /* ===== Disabled ===== */
+    --disabled-bg: #322A4A;
+    --disabled-text: #786C97;
+    --disabled-border: #443863;
+
+    /* ===== Остальные ===== */
+    --primary-button-bg: #C58AFF;
+    --danger: #FF6B8B;
+    --background: #1A1430;
+}
+
 /* ======================================= */
-/* Шрифт, фон и структура сайта */
+/* Шрифт, фон и структура сайта            */
 /* ======================================= */
+
 body,
 html,
 #root {
@@ -29,7 +58,7 @@ html,
     overflow: hidden;
     font-family: 'Roboto', sans-serif;
     background: var(--bg);
-    color: var(--text);
+    color: var(--text-primary);
 }
 
 .app-root {
@@ -40,39 +69,39 @@ html,
 /* Боковая панель */
 .sidebar {
     width: 220px;
-    background: #211922;
+    background: #1F1838;
     padding: 24px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    border-right: 1px solid rgba(255, 255, 255, 0.02);
+    border-right: 1px solid var(--border);
     flex-shrink: 0;
 }
 
 .app-title {
-    color: var(--text);
-    margin: 0 0 8px 0
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
 }
 
 .btn-link {
     background: transparent;
     border: none;
-    color: var(--muted);
+    color: var(--text-primary);
     padding: 8px 0;
     text-align: left;
-    cursor: pointer
+    cursor: pointer;
 }
 
 .sidebar-bottom {
-    padding-top: 12px
+    padding-top: 12px;
 }
 
 .account-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
     padding: 8px 10px;
-    color: var(--muted);
-    cursor: pointer
+    color: var(--text-primary);
+    cursor: pointer;
 }
 
 .main-area {
@@ -97,14 +126,14 @@ html,
 }
 
 .top-left {
-    font-weight: 600
+    font-weight: 600;
 }
 
 /* Кнопки */
 .btn {
-    background: var(--primary-button-bg);
+    background: var(--accent);
     border: none;
-    color: var(--text-dark);
+    color: var(--text-primary);
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
@@ -116,7 +145,7 @@ html,
 
 .btn.ghost {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.06)
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .board-wrap {
@@ -124,73 +153,59 @@ html,
     overflow-x: auto;
     overflow-y: hidden;
     padding: 20px 0 20px 0;
-    min-height: 0; 
+    min-height: 0;
 }
 
 /* Списки тасков */
 .columns {
-  display: flex;
-  align-items: flex-start;
-  width: max-content; 
-  height: 100%;
+    display: flex;
+    align-items: flex-start;
+    width: max-content;
+    height: 100%;
 }
 
 .column {
-  background: var(--panel);
-  width: 320px;
-  display: flex;
-  flex-shrink: 0;
-  flex-direction: column;
-  border-radius: 15px;
-  box-shadow: 0 0 0 1px var(--panel-stroke);
-  height: 100%;
-
-  /* spacing moved to the column element so placeholder preserves it while dragging */
-  margin-right: 18px;
-
-  /* Prevent collapse when the DnD library applies inline styles during dragging */
-  min-width: 320px;
-  flex: 0 0 320px;
+    background: var(--surface);
+    width: 320px;
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+    height: 100%;
+    margin-right: 18px;
+    min-width: 320px;
+    flex: 0 0 320px;
 }
 
 /* ensure the last visible column (and the add-column block) doesn't add extra space */
 .columns .column:last-child,
 .column.add-column {
-  margin-right: 0;
+    margin-right: 0;
 }
 
 /* Стили для перетаскиваемой колонки */
 .column.dragging {
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
-  opacity: 0.9;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
+    box-shadow: 0 15px 35px var(--shadow-soft);
+    opacity: 0.9;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
 }
 
 .column:hover .drag-handle {
-  opacity: 0.8;
+    opacity: 0.8;
 }
 
-/* Стили для колонки, над которой происходит перетаскивание */
 .column.drop-target {
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
 }
 
-/* Улучшенные стили для области перетаскивания задач */
 .column-body.over {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  transition: background 0.2s ease;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    transition: background 0.2s ease;
 }
-
-/* Стили для кнопки добавления колонки при перетаскивании */
-.column.add-column.drag-over {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-
 
 .col-title {
     font-weight: 600;
@@ -214,14 +229,13 @@ html,
 .column-body {
     border-radius: 8px;
     padding: 12px;
-    /* min-height: 240px; */
     min-height: 0;
     flex-grow: 1;
     overflow: auto;
 }
 
 .col-count {
-    background: var(--card); 
+    background: var(--panel-stroke);
     color: #fff;
     padding: 3px 7px;
     border-radius: 100px;
@@ -242,19 +256,14 @@ html,
 }
 
 .column.add-column {
-    min-width: 300px;
-    width: 300px;
-    background: transparent; 
-    border: 2px dashed rgba(255, 255, 255, 0.1); 
-    border-radius: 6px;
+    background: transparent;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%; 
     cursor: pointer;
 }
 
-/* Группировка названия колонки и счетчика для выравнивания */
 .col-title-wrap {
     display: flex;
     align-items: center;
@@ -263,22 +272,21 @@ html,
     flex-grow: 1;
 }
 
-/* Стили для кнопки (+) */
 .icon-btn.add-card {
     font-size: 20px;
     color: var(--muted);
 }
 
 /* ======================================= */
-/* Карточки */
+/* Карточки                                */
 /* ======================================= */
 .card {
-  background: var(--card);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 16px;
-  cursor: pointer;
-  box-shadow: 0 0 0 1px var(--card-stroke);
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px var(--card-stroke);
 }
 
 .card.dragging {
@@ -286,32 +294,31 @@ html,
 }
 
 .card-title {
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--accent);
-  margin-bottom: 6px; 
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--accent);
+    margin-bottom: 6px;
 }
 
 .card-desc {
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 10px;
-  line-height: 1.4;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 10px;
+    line-height: 1.4;
 }
 
 .card-left-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: var(--muted);
-  padding-top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--muted);
 }
 
 .card-footer .meta {
@@ -575,20 +582,8 @@ html,
     margin-top: 20px;
 }
 
-/* Кнопка переключения "Boards" */
-.boards-toggle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    font-weight: 500;
-    color: var(--muted);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    text-align: left;
-    padding: 8px 0; 
+.boards-header {
+    color: var(--text-secondary);
     margin-bottom: 8px;
 }
 

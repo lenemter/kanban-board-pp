@@ -62,11 +62,11 @@ def move_column(session: Session, column: Column, before: Column | None, after: 
         # между двумя колонками
         new_position = (before.position + after.position) / 2
     elif before:
-        # вставить перед колонки
-        new_position = before.position - 1
+        # вставить после колонки `before`
+        new_position = before.position + 1
     elif after:
-        # вставить после колонки
-        new_position = after.position + 1
+        # вставить перед колонкой `after`
+        new_position = after.position - 1
     else:
         # колонок нет, вставляем первой
         new_position = 0

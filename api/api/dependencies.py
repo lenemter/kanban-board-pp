@@ -152,7 +152,25 @@ def get_board_and_column(
     return board, column
 
 
+def get_board_if_collaborator_and_column(
+    current_user: CurrentUserDep,
+    column_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.Column]:
+    column = session.get(api.db.Column, column_id)
+    if column is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Column not found")
+
+    board = board_if_user_collaborator(column.board_id, current_user, session)
+
+    return board, column
+
+
 BoardColumnDep = Annotated[tuple[api.db.Board, api.db.Column], Depends(get_board_and_column)]
+BoardCollaboratorColumnDep = Annotated[
+    tuple[api.db.Board, api.db.Column],
+    Depends(get_board_if_collaborator_and_column)
+]
 
 # --- Task ---
 

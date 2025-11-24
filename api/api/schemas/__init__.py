@@ -2,7 +2,7 @@ from .user import UserCreate, UserPublic, UserUpdate
 from .board import BoardCreate, BoardPublic, BoardUpdate
 from .board_user_access import BoardUserAccessPublic
 from .board_tag import BoardTagCreate, BoardTagPublic, BoardTagUpdate
-from .column import ColumnCreate, ColumnPublic, ColumnUpdate
+from .column import ColumnCreate, ColumnPublic, ColumnUpdate, MoveColumnPayload
 from .task import TaskCreate, TaskPublic, TaskUpdate, MoveTaskPayload
 from .task_tag import TaskTagCreate, TaskTagPublic
 from .task_comment import TaskCommentCreate, TaskCommentPublic, TaskCommentUpdate
@@ -15,7 +15,7 @@ __all__ = [
     "BoardCreate", "BoardPublic", "BoardUpdate",
     "BoardUserAccessPublic",
     "BoardTagCreate", "BoardTagPublic", "BoardTagUpdate",
-    "ColumnCreate", "ColumnPublic", "ColumnUpdate",
+    "ColumnCreate", "ColumnPublic", "ColumnUpdate", "MoveColumnPayload",
     "TaskCreate", "TaskPublic", "TaskUpdate", "MoveTaskPayload",
     "TaskTagCreate", "TaskTagPublic",
     "TaskCommentCreate", "TaskCommentPublic", "TaskCommentUpdate",

@@ -7,13 +7,12 @@ import api.schemas
 router = APIRouter(tags=["columns"])
 
 
-def validate_position(board: api.db.Board, new_position: int):
-    if new_position < 0:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Position must be greater or equal 0")
+def validate_move(column: api.db.Column, before: api.db.Column | None, after: api.db.Column | None) -> None:
+    if before and before.board_id != column.board_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid before column")
 
-    for column in api.db.get_columns(board):
-        if column.position == new_position:
-            raise HTTPException(status.HTTP_409_CONFLICT, "This position is already taken")
+    if after and after.board_id != column.board_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid after column")
 
 
 @router.get("/boards/{board_id}/columns", response_model=list[api.schemas.ColumnPublic])
@@ -34,16 +33,29 @@ async def get_column(board_and_column: api.dependencies.BoardColumnDep):
 
 @router.patch("/columns/{column_id}", response_model=api.schemas.ColumnPublic)
 async def update_column(
-    board_and_column: api.dependencies.BoardColumnDep,
+    board_and_column: api.dependencies.BoardCollaboratorColumnDep,
     column_update: api.schemas.ColumnUpdate,
     session: api.dependencies.SessionDep
 ):
     board, column = board_and_column
 
-    if not isinstance(column_update.position, api.schemas.UnsetType) and column_update.position != column.position:
-        validate_position(board, column_update.position)
-
     return api.db.update_column(session, column, **column_update.model_dump(exclude_unset=True))
+
+
+@router.patch("columns/{task_id}/move", response_model=api.schemas.ColumnPublic)
+async def move_column(
+    board_and_column: api.dependencies.BoardCollaboratorColumnDep,
+    move_payload: api.schemas.MoveColumnPayload,
+    session: api.dependencies.SessionDep,
+):
+    board, column = board_and_column
+
+    before = api.db.get_column_by_id(session, move_payload.before_id) if move_payload.before_id else None
+    after = api.db.get_column_by_id(session, move_payload.after_id) if move_payload.after_id else None
+
+    validate_move(column, before, after)
+
+    return api.db.move_column(session, column, before, after)
 
 
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)

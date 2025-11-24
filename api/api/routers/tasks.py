@@ -7,17 +7,6 @@ import api.schemas
 router = APIRouter(tags=["tasks"])
 
 
-def validate_new_column(board: api.db.Board, new_column_id: int) -> api.db.Column:
-    new_column = api.db.get_column_by_id(new_column_id)
-    if new_column is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Column not found")
-
-    if new_column.board_id != board.id:
-        raise HTTPException(status.HTTP_409_CONFLICT, "Cannot move tasks between boards")
-
-    return new_column
-
-
 def validate_move(before: api.db.Task | None, after: api.db.Task | None) -> None:
     if before and before.column_id is None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid before task")
@@ -99,7 +88,7 @@ async def move_task(
 ):
     board, column, task = board_column_and_task
 
-    new_column = api.db.get_column_by_id(move_payload.new_column_id)
+    new_column = api.db.get_column_by_id(session, move_payload.new_column_id)
     if not new_column:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Column not found")
 

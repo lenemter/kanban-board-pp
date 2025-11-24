@@ -6,11 +6,10 @@ if TYPE_CHECKING:
     from .. import Board, Column
 
 
-def get_column_by_id(column_id: int) -> Column | None:
-    from .. import engine, Column
+def get_column_by_id(session: Session, column_id: int) -> Column | None:
+    from .. import Column
 
-    with Session(engine) as session:
-        return session.get(Column, column_id)
+    return session.get(Column, column_id)
 
 
 def get_columns(board: Board) -> list[Column]:
@@ -42,6 +41,38 @@ def create_column(board: Board, **kwargs) -> Column:
 
 def update_column(session: Session, column: Column, **kwargs) -> Column:
     column.sqlmodel_update(kwargs)
+    session.add(column)
+    session.commit()
+    session.refresh(column)
+
+    return column
+
+
+def update_board(session: Session, board: Board, **kwargs) -> Board:
+    board.sqlmodel_update(kwargs)
+    session.add(board)
+    session.commit()
+    session.refresh(board)
+
+    return board
+
+
+def move_column(session: Session, column: Column, before: Column | None, after: Column | None) -> Column:
+    if before and after:
+        # между двумя колонками
+        new_position = (before.position + after.position) / 2
+    elif before:
+        # вставить перед колонки
+        new_position = before.position - 1
+    elif after:
+        # вставить после колонки
+        new_position = after.position + 1
+    else:
+        # колонок нет, вставляем первой
+        new_position = 0
+
+    column.position = new_position
+
     session.add(column)
     session.commit()
     session.refresh(column)

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
+from sqlmodel import Session
 
 import api.db
 import api.dependencies
@@ -18,7 +19,7 @@ def validate_move(before: api.db.Task | None, after: api.db.Task | None) -> None
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Before/after must belong to same column")
 
 
-def validate_new_assignee(board: api.db.Board, assignee_id: int | None) -> api.db.User | None:
+def validate_new_assignee(session: Session, board: api.db.Board, assignee_id: int | None) -> api.db.User | None:
     if assignee_id is None:
         return None
 
@@ -26,7 +27,7 @@ def validate_new_assignee(board: api.db.Board, assignee_id: int | None) -> api.d
     if assigned_user is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "This user doesn't exist")
 
-    if board.owner_id != assignee_id:  # TODO: Check for other users
+    if not api.db.user_has_collaborator_access_to_board(session, board, assigned_user):
         raise HTTPException(status.HTTP_409_CONFLICT, "This user doesn't have access to this board")
 
     return assigned_user
@@ -43,12 +44,13 @@ async def add_task(
     board_and_column: api.dependencies.BoardColumnDep,
     task_create: api.schemas.TaskCreate,
     current_user: api.dependencies.CurrentUserDep,
+    session: api.dependencies.SessionDep,
 ):
     board, column = board_and_column
 
-    validate_new_assignee(board, task_create.assignee_id)
+    validate_new_assignee(session, board, task_create.assignee_id)
 
-    return api.db.create_task(column, author=current_user.id, **task_create.model_dump())
+    return api.db.create_task(session, column, author=current_user.id, **task_create.model_dump())
 
 
 @router.get("/tasks/{task_id}", response_model=api.schemas.TaskPublic)
@@ -59,7 +61,7 @@ async def get_task(board_column_and_task: api.dependencies.BoardColumnTaskDep):
 
 @router.patch("/tasks/{task_id}", response_model=api.schemas.TaskPublic)
 async def update_task(
-    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    board_column_and_task: api.dependencies.BoardCollaboratorColumnTaskDep,
     task_update: api.schemas.TaskUpdate,
     session: api.dependencies.SessionDep,
 ):
@@ -70,7 +72,7 @@ async def update_task(
         if old_assignee is not None:
             api.db.create_task_comment(task, None, content=f"Unassigned {old_assignee.name}")
 
-        new_assignee = validate_new_assignee(board, task_update.assignee_id)
+        new_assignee = validate_new_assignee(session, board, task_update.assignee_id)
         if new_assignee is not None:
             api.db.create_task_comment(task, None, content=f"Assigned {new_assignee.name}")
 

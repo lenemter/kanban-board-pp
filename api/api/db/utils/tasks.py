@@ -25,18 +25,17 @@ def get_tasks(column: Column) -> list[Task]:
         )
 
 
-def create_task(column: Column, **kwargs) -> Task:
-    from .. import engine, Task
+def create_task(session: Session, column: Column, **kwargs) -> Task:
+    from .. import Task
 
     assert column.id is not None
 
-    with Session(engine) as session:
-        new_task = Task(column_id=column.id, position=len(get_tasks(column)), **kwargs)
-        session.add(new_task)
-        session.commit()
-        session.refresh(new_task)
+    new_task = Task(column_id=column.id, position=len(get_tasks(column)), **kwargs)
+    session.add(new_task)
+    session.commit()
+    session.refresh(new_task)
 
-        return new_task
+    return new_task
 
 
 def update_task(session: Session, task: Task, **kwargs) -> Task:

@@ -115,4 +115,22 @@ def add_user_to_board(session: Session, board: Board, user: User) -> BoardUserAc
 
 
 def get_board_user_access(session: Session, board: Board, user: User) -> BoardUserAccess | None:
+    from .. import BoardUserAccess
+
     return session.get(BoardUserAccess, (board.id, user.id))
+
+
+def user_has_collaborator_access_to_board(session, board: Board, user: User) -> bool:
+    from .. import BoardUserAccess
+
+    if board.owner_id == user.id:
+        return True
+
+    board_user_access = session.exec(
+        select(BoardUserAccess).where(
+            BoardUserAccess.board_id == board.id,
+            BoardUserAccess.user_id == user.id
+        )
+    ).first()
+
+    return board_user_access is not None

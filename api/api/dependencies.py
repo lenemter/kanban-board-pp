@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 import api.db
 
@@ -70,20 +70,10 @@ def board_if_user_collaborator(board_id: int, current_user: CurrentUserDep, sess
     if board is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
 
-    if board.owner_id == current_user.id:
+    if api.db.user_has_collaborator_access_to_board(session, board, current_user):
         return board
-
-    board_user_access = session.exec(
-        select(api.db.BoardUserAccess).where(
-            api.db.BoardUserAccess.board_id == board.id,
-            api.db.BoardUserAccess.user_id == current_user.id
-        )
-    ).first()
-
-    if board_user_access is None:
+    else:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
-
-    return board
 
 
 def board_if_accessible_by_user(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
@@ -189,7 +179,25 @@ def get_board_column_and_task(
     return board, column, task
 
 
+def get_board_collaborator_column_and_task(
+    current_user: CurrentUserDep,
+    task_id: int,
+    session: SessionDep
+) -> tuple[api.db.Board, api.db.Column, api.db.Task]:
+    task = session.get(api.db.Task, task_id)
+    if task is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Task not found")
+
+    board, column = get_board_if_collaborator_and_column(current_user, task.column_id, session)
+
+    return board, column, task
+
+
 BoardColumnTaskDep = Annotated[tuple[api.db.Board, api.db.Column, api.db.Task], Depends(get_board_column_and_task)]
+BoardCollaboratorColumnTaskDep = Annotated[
+    tuple[api.db.Board, api.db.Column, api.db.Task],
+    Depends(get_board_collaborator_column_and_task)
+]
 
 # --- Task Tag ---
 

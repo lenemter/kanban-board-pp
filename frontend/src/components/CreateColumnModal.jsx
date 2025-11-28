@@ -29,7 +29,7 @@ function CreateColumnModal({ onClose, onCreate }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 className="modal-title">Создать новую колонку</h3>
+          <h3 className="modal-title">Create New Column</h3>
           <button className="icon-btn" onClick={onClose} disabled={loading}>×</button>
         </div>
 
@@ -54,7 +54,7 @@ function CreateColumnModal({ onClose, onCreate }) {
               onClick={onClose} 
               disabled={loading}
             >
-              Отмена
+              Cancel
             </button>
             <button 
               type="submit" 

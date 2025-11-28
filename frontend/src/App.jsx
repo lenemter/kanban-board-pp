@@ -584,11 +584,11 @@ function App() {
       )}
 
       {showAccount && (
-        <AccountMenu
-          onClose={() => setShowAccount(false)}
-          onOpenAddUser={() => setShowAddUser(true)}
-          onLogout={handleLogout}
-        />
+          <AccountMenu
+              onClose={() => setShowAccount(false)}
+              onLogout={handleLogout}
+              currentUser={currentUser}
+          />
       )}
       {showAddUser && (
         <AddUserModal currentBoardId={currentBoardId} onClose={handleCloseAddUserModal} onSelectAssignee={assigneeCallback} />

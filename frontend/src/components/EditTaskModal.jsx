@@ -50,36 +50,36 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
 
 
     useEffect(() => {
-        const loadTaskDetails = async () => {
-            setLoading(true);
-            setError('');
-            try {
-                const subtasksResponse = await apiClient.getSubtasks(card.id);
-                const formattedSubtasks = subtasksResponse.map(s => ({
-                    id: s.id,
-                    text: s.title,
-                    done: s.is_done,
-                }));
-                setSubtasks(formattedSubtasks);
+    const loadTaskDetails = async () => {
+        setLoading(true);
+        setError('');
+        try {
+        const subtasksResponse = await apiClient.getSubtasks(card.id);
+        const formattedSubtasks = subtasksResponse.map(s => ({
+            id: s.id,
+            text: s.title,
+            done: s.is_done,
+        }));
+        setSubtasks(formattedSubtasks);
 
-                const commentsResponse = await apiClient.getTaskComments(card.id);
-                const formattedComments = commentsResponse.map(c => ({
-                    id: c.id,
-                    user: getUserName(c.user_id),
-                    text: c.content,
-                    date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                }));
-                setComments(formattedComments.reverse());
+        const commentsResponse = await apiClient.getTaskComments(card.id);
+        const formattedComments = commentsResponse.map(c => ({
+            id: c.id,
+            user: c.author ? getUserName(c.author) : 'Unknown User', // Используем author если есть
+            text: c.content,
+            date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        }));
+        setComments(formattedComments.reverse());
 
-            } catch (err) {
-                console.error("Failed to load task details:", err);
-                setError(err.message || 'Failed to load task details (Subtasks/Comments).');
-            } finally {
-                setLoading(false);
-            }
-        };
+        } catch (err) {
+        console.error("Failed to load task details:", err);
+        setError(err.message || 'Failed to load task details (Subtasks/Comments).');
+        } finally {
+        setLoading(false);
+        }
+    };
 
-        loadTaskDetails();
+    loadTaskDetails();
     }, [card.id, users]);
 
 
@@ -220,7 +220,6 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
                     <button className="icon-btn" onClick={onClose}><X size={24} /></button>
                 </div>
 
-                {/* Обертка для прокрутки */}
                 <div className="modal-content-scroll">
 
                     {error && <div className="error-banner">{error}</div>}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// Константы для маппинга приоритетов
+// Constants for priority mapping
 const PRIORITY_MAP = {
   'Low': 1,
   'Medium': 2,
@@ -20,7 +20,7 @@ function CreateTaskModal({ onClose, onCreate, boardUsers = [], currentColumnId }
 
   const handleCreate = () => {
     if (!title.trim() || !assignee || !dueDate) {
-      alert('Пожалуйста, заполните все обязательные поля (Title, Assignee, Due Date).');
+      alert('Please fill in all required fields.');
       return;
     }
 
@@ -30,8 +30,8 @@ function CreateTaskModal({ onClose, onCreate, boardUsers = [], currentColumnId }
     const assigneeIdNumber = parseInt(assignee,10);
     console.log(`assigneeIdNumber: ${assigneeIdNumber}`, typeof assigneeIdNumber); // Debug i
     if (isNaN(assigneeIdNumber)) {
-      console.error('Ошибка: assignee ID не является числом или пуст.');
-      alert('Неверный ID исполнителя.');
+      console.error('Error: assignee ID is not a number or is empty.');
+      alert('Invalid assignee ID.');
       return;
     }
 

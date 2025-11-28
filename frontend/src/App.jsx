@@ -574,12 +574,13 @@ function App() {
       )}
 
       {showEdit && editingCard && (
-        <EditTaskModal
-          card={editingCard}
-          onClose={() => setShowEdit(false)}
-          onSave={handleSaveEdit}
-          boardUsers={boardUsers}
-        />
+      <EditTaskModal
+        card={editingCard}
+        onClose={() => setShowEdit(false)}
+        onSave={handleSaveEdit}
+        boardUsers={boardUsers}
+        currentUserId={currentUser?.id}
+      />
       )}
 
       {showAccount && (

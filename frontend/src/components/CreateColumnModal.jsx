@@ -8,7 +8,7 @@ function CreateColumnModal({ onClose, onCreate }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!columnName.trim()) {
-      setError("Название колонки не может быть пустым.");
+      setError("Column name cannot be empty.");
       return;
     }
     
@@ -19,7 +19,7 @@ function CreateColumnModal({ onClose, onCreate }) {
       await onCreate(columnName.trim());
       
     } catch (err) {
-      setError(err.message || "Не удалось создать колонку.");
+      setError(err.message || "Failed to create column.");
     } finally {
       setLoading(false);
     }
@@ -35,13 +35,13 @@ function CreateColumnModal({ onClose, onCreate }) {
 
         <form onSubmit={handleSubmit}>
           
-          <label>Название колонки*</label>
+          <label>Column Name*</label>
           <input
             type="text"
             value={columnName}
             onChange={e => setColumnName(e.target.value)}
             disabled={loading}
-            placeholder="Например: To Do, In Progress"
+            placeholder="E.g.: To Do, In Progress"
             required
           />
           
@@ -61,7 +61,7 @@ function CreateColumnModal({ onClose, onCreate }) {
               className="btn" 
               disabled={loading || !columnName.trim()}
             >
-              {loading ? 'Создание...' : 'Создать колонку'}
+              {loading ? 'Creating...' : 'Create Column'}
             </button>
           </div>
         </form>

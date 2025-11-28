@@ -8,7 +8,7 @@ function CreateBoardModal({ onClose, onCreate }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!boardName.trim()) {
-      setError("Название доски не может быть пустым.");
+      setError("Board name cannot be empty.");
       return;
     }
     
@@ -30,7 +30,7 @@ function CreateBoardModal({ onClose, onCreate }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
 
-        {/* Шапка модального окна */}
+        {/* Modal Header */}
         <div className="modal-header">
           <h3 className="modal-title">Create New Board</h3>
           <button className="icon-btn" onClick={onClose}>×</button>

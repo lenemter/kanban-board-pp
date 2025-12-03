@@ -1,640 +1,86 @@
-import React, { useState, useEffect, useCallback } from 'react';
-// Компоненты
-import Board from './components/Board';
-import CreateTaskModal from './components/CreateTaskModal';
-import EditTaskModal from './components/EditTaskModal';
-import AccountMenu from './components/AccountMenu';
-import AddUserModal from './components/AddUserModal';
-import AuthPage from './components/AuthPage';
-import CreateBoardModal from './components/CreateBoardModal';
-import CreateColumnModal from './components/CreateColumnModal';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import BoardPage from './pages/BoardPage';
 import apiClient from './api';
-import ConfirmModal from './components/ConfirmModal';
-// Прочее
-import { UserPlus, Trash2, User } from 'lucide-react';
-
-// Утилита для преобразования данных API в формат фронтенда
-const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers = []) => {
-  const board = {
-    id: boardDetails.id,
-    title: boardDetails.name,
-    owner_id: boardDetails.owner_id,
-    cards: [],
-    columns: [],
-  };
-
-  apiColumnsWithTasks
-    .sort((a, b) => a.position - b.position)
-    .forEach(col => {
-      board.columns.push({
-        id: col.id,
-        title: col.name,
-        card_ids: col.tasks
-          .sort((a, b) => a.position - b.position) // Сортируем по position
-          .map(task => task.id),
-      });
-
-      col.tasks.forEach(task => {
-        let assigneeId = null;
-        let assigneeName = '';
-        if (task.assignee_id) {
-          assigneeId = task.assignee_id;
-        }
-
-        if (task.assignee_name) assigneeName = task.assignee_name;
-        else if (!assigneeName && assigneeId) {
-          const u = (boardUsers || []).find(x => x.id === assigneeId);
-          assigneeName = u ? (u.name || u.email || u.id) : '';
-        }
-
-        board.cards.push({
-          id: task.id,
-          columnId: col.id,
-          title: task.title,
-          description: task.description,
-          priority: task.priority,
-          due_date: task.due_date,
-          assignee_id: assigneeId,
-          assignee_name: assigneeName,
-          position: task.position || 0, // Добавляем позицию
-        });
-      });
-    });
-
-  return board;
-};
-
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(!!apiClient.token);
-  const [loading, setLoading] = useState(false);
-
-  // СОСТОЯНИЕ ДОСКИ
-  const [availableBoards, setAvailableBoards] = useState([]);
-  const [currentBoardId, setCurrentBoardId] = useState(null);
-  const [board, setBoard] = useState(null);
-  const [boardUsers, setBoardUsers] = useState([]);
-
-  // СОСТОЯНИЕ МОДАЛЬНЫХ ОКОН
-  const [showCreate, setShowCreate] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-  const [editingCard, setEditingCard] = useState(null);
-  const [showAccount, setShowAccount] = useState(false);
-  const [showAddUser, setShowAddUser] = useState(false);
-  const [showCreateBoard, setShowCreateBoard] = useState(false);
-  const [showCreateColumn, setShowCreateColumn] = useState(false);
-  const [showConfirmDeleteColumn, setShowConfirmDeleteColumn] = useState(false);
-  const [columnToDeleteId, setColumnToDeleteId] = useState(null);
-  const [columnToDeleteTitle, setColumnToDeleteTitle] = useState('');
-  const [assigneeCallback, setAssigneeCallback] = useState(null);
-
-  // СОСТОЯНИЕ КОЛОНКИ ДЛЯ СОЗДАНИЯ ЗАДАЧ
-  const [taskCreationColumnId, setTaskCreationColumnId] = useState(null);
-
-  // === НОВЫЕ СОСТОЯНИЯ ДЛЯ УДАЛЕНИЯ ДОСКИ И ПОЛЬЗОВАТЕЛЯ ===
-  const [currentUser, setCurrentUser] = useState(null);
-  const [boardToDeleteId, setBoardToDeleteId] = useState(null);
-  const [boardToDeleteName, setBoardToDeleteName] = useState('');
-  const [boardTaskCount, setBoardTaskCount] = useState(0);
-  const [showConfirmDeleteBoard, setShowConfirmDeleteBoard] = useState(false);
-  const [confirmInput, setConfirmInput] = useState('');
-  // ========================================================
-
-  // ----------------------------------------------------
-  // ЛОГИКА АУТЕНТИФИКАЦИИ И ВЫХОДА
-  // ----------------------------------------------------
-
-  const handleLogout = useCallback(() => {
-    apiClient.clearToken();
-    setIsLoggedIn(false);
-    setBoard(null);
-    setAvailableBoards([]);
-    setCurrentBoardId(null);
-    setShowAccount(false);
-  }, []);
-
-  const handleLoginSuccess = useCallback(() => {
-    setIsLoggedIn(true);
-    loadInitialData();
-  }, []);
-
-  // ----------------------------------------------------
-  // ЛОГИКА ЗАГРУЗКИ ДОСОК
-  // ----------------------------------------------------
-
-  const loadBoardData = useCallback(async (boardId) => {
-    setLoading(true);
-    try {
-      const apiColumns = await apiClient.getColumns(boardId);
-
-      const columnsWithTasksPromises = apiColumns.map(async (column) => {
-        const tasks = await apiClient.getTasks(column.id);
-        return { ...column, tasks: tasks || [] };
-      });
-
-      const columnsWithTasks = await Promise.all(columnsWithTasksPromises);
-
-      const boardDetails = availableBoards.find(b => b.id === boardId)
-        || await apiClient.getBoard(boardId);
-
-      let users = [];
-      try {
-        users = await apiClient.getBoardUsers(boardId) || [];
-      } catch (err) {
-        console.warn('Failed to load board users', err);
-        users = [];
-      }
-
-      const transformedBoard = transformApiToBoardFormat(boardDetails, columnsWithTasks, users);
-
-      let taskCount = 0;
-      try {
-        const countResult = await apiClient.getBoardTaskCount(boardId);
-        taskCount = countResult.n_tasks || 0;
-      } catch (err) {
-        console.warn('Failed to load task count for board:', err);
-      }
-      transformedBoard.n_tasks = taskCount;
-
-      setBoard(transformedBoard);
-      setBoardUsers(users);
-
-    } catch (error) {
-      console.error("Failed to load board details:", error);
-      if (error.message.includes('token is missing') || error.message.includes('401')) {
-        handleLogout();
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [availableBoards, handleLogout]);
-
-  const loadInitialData = useCallback(async () => {
-    if (!apiClient.token) return;
-
-    setLoading(true);
-    try {
-      const user = await apiClient.getUserMe();
-      setCurrentUser(user);
-
-      const boardsList = await apiClient.getSharedBoards();
-
-      if (boardsList && boardsList.length > 0) {
-        setAvailableBoards(boardsList);
-
-        const firstBoardId = boardsList[0].id;
-        setCurrentBoardId(firstBoardId);
-        await loadBoardData(firstBoardId);
-
-      } else {
-        setAvailableBoards([]);
-        setBoard({ id: 'empty', title: 'Нет доступных досок', cards: [], columns: [] });
-      }
-    } catch (error) {
-      console.error("Failed to load initial boards:", error);
-      handleLogout();
-    } finally {
-      setLoading(false);
-    }
-  }, [handleLogout, loadBoardData]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoggedIn && !board) {
-      loadInitialData();
-    }
-  }, [isLoggedIn, loadInitialData, board]);
-
-  // ----------------------------------------------------
-  // ЛОГИКА СОЗДАНИЯ ДОСОК
-  // ----------------------------------------------------
-  const handleCreateNewBoard = async (name) => {
-    try {
-      const newBoard = await apiClient.createBoard(name);
-
-      setAvailableBoards(prev => [...prev, newBoard]);
-      setCurrentBoardId(newBoard.id);
-
-      await loadBoardData(newBoard.id);
-
-      setShowCreateBoard(false);
-
-    } catch (error) {
-      console.error("Error creating board:", error);
-      throw new Error(error.message || "Не удалось создать доску.");
-    }
-  };
-
-
-  // ----------------------------------------------------
-  // ЛОГИКА СОЗДАНИЯ КОЛОНКИ
-  // ----------------------------------------------------
-
-  const handleCreateNewColumn = async (columnName) => {
-    if (!currentBoardId) {
-      throw new Error("Не выбран ID доски для создания колонки.");
-    }
-
-    setLoading(true);
-    try {
-      const newColumnApi = await apiClient.createColumn(currentBoardId, columnName);
-
-      setBoard(prevBoard => {
-        if (!prevBoard) return prevBoard;
-
-        const newBoard = { ...prevBoard };
-
-        newBoard.columns = [
-          ...newBoard.columns,
-          {
-            id: newColumnApi.id,
-            title: newColumnApi.name,
-            card_ids: [],
-          }
-        ];
-
-        return newBoard;
-      });
-
-      setShowCreateColumn(false);
-
-    } catch (error) {
-      console.error("Error creating column:", error);
-      throw new Error(error.message || "Не удалось создать колонку.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ----------------------------------------------------
-  // Удаление колонки
-  // ----------------------------------------------------
-  const handleRequestDeleteColumn = (columnId, columnTitle = '') => {
-    if (!columnId) return;
-    setColumnToDeleteId(columnId);
-    setColumnToDeleteTitle(columnTitle);
-    setShowConfirmDeleteColumn(true);
-  };
-
-  const handleConfirmDeleteColumn = async () => {
-    if (!columnToDeleteId) return;
-    setLoading(true);
-    try {
-      await apiClient.deleteColumn(columnToDeleteId);
-      setBoard(prev => {
-        if (!prev) return prev;
-        const nb = { ...prev };
-        nb.columns = nb.columns.filter(c => c.id !== columnToDeleteId);
-        nb.cards = nb.cards.filter(card => card.columnId !== columnToDeleteId);
-        return nb;
-      });
-    } catch (error) {
-      console.error('Failed to delete column, falling back to local remove:', error);
-      setBoard(prev => {
-        if (!prev) return prev;
-        const nb = { ...prev };
-        nb.columns = nb.columns.filter(c => c.id !== columnToDeleteId);
-        nb.cards = nb.cards.filter(card => card.columnId !== columnToDeleteId);
-        return nb;
-      });
-    } finally {
-      setLoading(false);
-      setShowConfirmDeleteColumn(false);
-      setColumnToDeleteId(null);
-      setColumnToDeleteTitle('');
-    }
-  };
-
-  // ----------------------------------------------------
-  // Удаление доски
-  // ----------------------------------------------------
-  const handleRequestDeleteBoard = (boardDetails) => {
-    // Вызывается из сайдбара, только если пользователь - владелец
-    setBoardToDeleteId(boardDetails.id);
-    setBoardToDeleteName(boardDetails.title);
-    setBoardTaskCount(boardDetails.n_tasks || 0);
-    setConfirmInput('');
-    setShowConfirmDeleteBoard(true);
-  };
-
-  const handleConfirmDeleteBoard = async () => {
-    if (!boardToDeleteId) return;
-
-    // Если есть задачи, нужно ввести название доски
-    if (boardTaskCount > 0 && confirmInput !== boardToDeleteName) {
-      alert(`Для подтверждения удаления доски "${boardToDeleteName}" введите ее название.`);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await apiClient.deleteBoard(boardToDeleteId);
-
-      // Сброс и перезагрузка данных
-      setBoard(null);
-      setCurrentBoardId(null);
-      await loadInitialData(); // Перезагрузит список досок и откроет первую доступную
-
-    } catch (error) {
-      console.error("Error deleting board:", error);
-      alert(error.message || "Не удалось удалить доску.");
-    } finally {
-      // Сброс состояний модального окна
-      setShowConfirmDeleteBoard(false);
-      setBoardToDeleteId(null);
-      setBoardToDeleteName('');
-      setBoardTaskCount(0);
-      setConfirmInput('');
-      setLoading(false);
-    }
-  };
-  // ----------------------------------------------------
-  // МЕТОДЫ ЗАДАЧ
-  // ----------------------------------------------------
-
-  const handleOpenCreate = (columnId) => {
-    setTaskCreationColumnId(columnId);
-    setShowCreate(true);
-  };
-
-  const handleCreate = async (columnId, card) => {
-    setLoading(true);
-    try {
-      const payload = {
-        title: card.title,
-        description: card.description,
-        priority: card.priority,
-        due_date: card.due_date,
-      };
-      if (card.assignee_id !== undefined) payload.assignee_id = card.assignee_id;
-
-      const created = await apiClient.createTask(columnId, payload);
-
-      const createdId = created.id ?? created.task_id ?? created._id ?? created.id;
-      let assigneeId = created.assignee_id ?? created.assignee ?? card.assignee_id ?? null;
-      let assigneeName = created.assignee_name ?? created.assignee_name ?? '';
-      if (!assigneeName && assigneeId) {
-        const u = boardUsers.find(u => String(u.id) === String(assigneeId) || String(u.user_id) === String(assigneeId) || u.email === assigneeId);
-        assigneeName = u ? (u.name || u.email || u.id) : '';
+    // Check authentication status on app load
+    const checkAuth = async () => {
+      try {
+        const isValid = await apiClient.checkAuth();
+        setIsAuthenticated(isValid);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
+    };
+    
+    checkAuth();
+  }, []);
 
-      const newCard = {
-        id: createdId ?? `card-${Date.now()}`,
-        columnId,
-        title: created.title ?? payload.title,
-        description: created.description ?? payload.description,
-        priority: created.priority ?? payload.priority,
-        due_date: created.due_date ?? payload.due_date,
-        assignee_id: assigneeId,
-        assignee_name: assigneeName,
-      };
-
-      const nb = { ...board };
-      nb.cards = [...nb.cards, newCard];
-      const col = nb.columns.find(c => String(c.id) === String(columnId));
-      if (col) {
-        col.card_ids = [newCard.id, ...(col.card_ids || [])];
-      }
-      setBoard(nb);
-      setShowCreate(false);
-    } catch (error) {
-      console.error('Failed to create task:', error);
-      alert('Failed to create task: ' + (error.message || error));
-    } finally {
-      setLoading(false);
-    }
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
   };
 
-  const handleOpenEdit = (cardId) => {
-    const c = board.cards.find(x => x.id === cardId);
-    setEditingCard(c);
-    setShowEdit(true);
+  const handleLogout = () => {
+    apiClient.clearToken();
+    setIsAuthenticated(false);
   };
 
-  const handleSaveEdit = async (cardId, payload) => {
-    setLoading(true);
-    try {
-      const updatePayload = {
-        title: payload.title,
-        description: payload.description,
-        priority: payload.priority,
-        due_date: payload.due_date,
-      };
-      if (payload.assignee_id !== undefined) updatePayload.assignee_id = payload.assignee_id;
-
-      const updated = await apiClient.updateTask(cardId, updatePayload);
-
-      const nb = { ...board };
-      nb.cards = nb.cards.map(c => {
-        if (c.id !== cardId) return c;
-        const assigneeId = updated.assignee_id ?? payload.assignee_id ?? c.assignee_id;
-        let assigneeName = updated.assignee_name ?? '';
-        if (!assigneeName && assigneeId) {
-          const u = boardUsers.find(u => String(u.id) === String(assigneeId) || u.email === assigneeId);
-          assigneeName = u ? (u.name || u.email || u.id) : '';
-        }
-
-        return {
-          ...c,
-          title: updated.title ?? payload.title ?? c.title,
-          description: updated.description ?? payload.description ?? c.description,
-          priority: updated.priority ?? payload.priority ?? c.priority,
-          due_date: updated.due_date ?? payload.due_date ?? c.due_date,
-          assignee_id: assigneeId,
-          assignee_name: assigneeName,
-        };
-      });
-      setBoard(nb);
-      setShowEdit(false);
-      setEditingCard(null);
-    } catch (error) {
-      console.error('Failed to update task:', error);
-      alert('Failed to update task: ' + (error.message || error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMoveLocal = (newBoard) => {
-    setBoard(newBoard);
-  };
-
-
-  const handleOpenAddUserModal = (callback) => {
-    setAssigneeCallback(() => callback);
-    setShowAddUser(true);
-  };
-
-  const handleCloseAddUserModal = () => {
-    setShowAddUser(false);
-    setAssigneeCallback(null);
-  };
-
-  // ----------------------------------------------------
-  // RENDER
-  // ----------------------------------------------------
-
-  if (!isLoggedIn) {
-    return <AuthPage onLoginSuccess={handleLoginSuccess} />;
-  }
-
-  if (loading || !board) {
-    return (
-      <div className="loading-screen" style={{
-        display: 'flex', justifyContent: 'center', alignItems: 'center',
-        height: '100vh', fontSize: '24px', color: '#61bd4f', background: '#0d1117'
-      }}>
-        Loading Board Data...
-      </div>
-    );
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="app-root">
-      <aside className="sidebar">
-        <div className="sidebar-top">
-          <div className="board-header-with-delete" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="app-title" style={{ margin: 0 }}>{board.title || 'Kanban'}</h2>
-            {currentUser && board.owner_id && currentUser.id === board.owner_id && (
-              <button
-                className="btn-link danger"
-                onClick={() => handleRequestDeleteBoard(board)}
-                title="Delete board"
-              >
-                <Trash2 size={18} />
-              </button>
-            )}
-          </div>
-          <div className="boards-section">
-            <div className="boards-header">Boards</div>
-
-            <div className="boards-list">
-              {availableBoards.map(b => (
-                <button
-                  key={b.id}
-                  className={`board-item btn-link ${b.id === currentBoardId ? 'active' : ''}`}
-                  onClick={() => {
-                    if (b.id !== currentBoardId) {
-                      setCurrentBoardId(b.id);
-                      loadBoardData(b.id);
-                    }
-                  }}
-                >
-                  {b.name}
-                </button>
-              ))}
-
-              <button
-                className="board-item btn-link new-board-btn"
-                onClick={() => setShowCreateBoard(true)}
-              >
-                + New Board
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="sidebar-bottom">
-          <button className="account-btn" onClick={() => setShowAccount(true)}>
-            <User size={16} /> <span>Account</span>
-          </button>
-        </div>
-      </aside>
-
-      <main className="main-area">
-        <header className="topbar">
-          <div className="top-left">{board.title}</div>
-          <div className="top-right">
-            <button className="btn" onClick={() => setShowAddUser(true)}>
-              <UserPlus size={18} className="btn-icon" />
-              Add Users
-            </button>
-          </div>
-        </header>
-
-        <Board
-          board={board}
-          onMoveLocal={handleMoveLocal}
-          onOpenCreate={handleOpenCreate}
-          onOpenEdit={handleOpenEdit}
-          onOpenCreateColumn={() => setShowCreateColumn(true)}
-          onRequestDeleteColumn={handleRequestDeleteColumn}
-          currentBoardId={currentBoardId}
-          onReloadBoard={() => loadBoardData(currentBoardId)}
+    <Router>
+      <Routes>
+        <Route 
+          path="/login" 
+          element={
+            !isAuthenticated ? (
+              <LoginPage onLoginSuccess={handleLoginSuccess} />
+            ) : (
+              <Navigate to="/dashboard" replace />
+            )
+          } 
         />
-      </main>
-
-      {showCreate && (
-        <CreateTaskModal
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreate}
-          currentColumnId={taskCreationColumnId}
-          onOpenAssigneeManager={handleOpenAddUserModal}
-          boardUsers={boardUsers}
+        <Route 
+          path="/dashboard" 
+          element={
+            isAuthenticated ? (
+              <DashboardPage onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
         />
-      )}
-
-      {showEdit && editingCard && (
-      <EditTaskModal
-        card={editingCard}
-        onClose={() => setShowEdit(false)}
-        onSave={handleSaveEdit}
-        boardUsers={boardUsers}
-        currentUserId={currentUser?.id}
-      />
-      )}
-
-      {showAccount && (
-          <AccountMenu
-              onClose={() => setShowAccount(false)}
-              onLogout={handleLogout}
-              currentUser={currentUser}
-          />
-      )}
-      {showAddUser && (
-        <AddUserModal currentBoardId={currentBoardId} onClose={handleCloseAddUserModal} onSelectAssignee={assigneeCallback} />
-      )}
-
-      {showCreateBoard && (
-        <CreateBoardModal
-          onClose={() => setShowCreateBoard(false)}
-          onCreate={handleCreateNewBoard}
+        <Route 
+          path="/board/:boardId" 
+          element={
+            isAuthenticated ? (
+              <BoardPage />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          } 
         />
-      )}
-
-      {showCreateColumn && (
-        <CreateColumnModal
-          onClose={() => setShowCreateColumn(false)}
-          onCreate={handleCreateNewColumn}
+        <Route 
+          path="/" 
+          element={
+            <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+          } 
         />
-      )}
-      {showConfirmDeleteColumn && (
-        <ConfirmModal
-          title="Delete column"
-          message={`Are you sure you want to delete column "${columnToDeleteTitle || columnToDeleteId}"? This will also remove its tasks.`}
-          onCancel={() => { setShowConfirmDeleteColumn(false); setColumnToDeleteId(null); setColumnToDeleteTitle(''); }}
-          onConfirm={handleConfirmDeleteColumn}
-        />
-      )}
-
-      {/* --- МОДАЛЬНОЕ ОКНО ДЛЯ УДАЛЕНИЯ ДОСКИ --- */}
-      {showConfirmDeleteBoard && (
-        <ConfirmModal
-          onCancel={() => {
-            setShowConfirmDeleteBoard(false);
-            setBoardToDeleteId(null);
-            setBoardToDeleteName('');
-            setBoardTaskCount(0);
-            setConfirmInput('');
-          }}
-          onConfirm={handleConfirmDeleteBoard}
-          title={`Delete Board "${boardToDeleteName}"?`}
-          confirmText={boardTaskCount > 0 ? boardToDeleteName : null}
-          confirmInput={confirmInput}
-          setConfirmInput={setConfirmInput}
-        >
-        </ConfirmModal>
-      )}
-    </div>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
 }
 

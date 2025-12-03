@@ -99,10 +99,23 @@ class ApiClient {
     return await response.json();
   }
 
-  clearToken() {
-    localStorage.removeItem('authToken');
-    this.token = null;
+  async checkAuth() {
+    try {
+      if (!this.token) return false;
+      
+      const user = await this.getUserMe();
+      return !!user;
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      this.clearToken();
+      return false;
+    }
   }
+
+    clearToken() {
+      localStorage.removeItem('authToken');
+      this.token = null;
+    }
 
   async resendVerification(username, password) {
     const formData = new URLSearchParams();
@@ -351,10 +364,8 @@ class ApiClient {
   }
 }
 
-// Создаем единственный экземпляр клиента
 const apiClient = new ApiClient();
 
 export default apiClient;
 
-// Также экспортируем класс для создания дополнительных экземпляров
 export { ApiClient };

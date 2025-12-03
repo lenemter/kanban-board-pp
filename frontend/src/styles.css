@@ -80,8 +80,10 @@ button, input, select, textarea {
 /*  Layout & Structure                     */
 /* ======================================= */
 .app-root {
-    display: flex;
-    height: 100vh;
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
 }
 
 .main-area {
@@ -155,6 +157,7 @@ button, input, select, textarea {
     border-radius: 4px;
     font-weight: 500;
     width: 100%;
+    text-decoration: none
 }
 
 .board-item.active {
@@ -222,11 +225,12 @@ button, input, select, textarea {
 /*  Board & Columns                        */
 /* ======================================= */
 .board-wrap {
-    flex-grow: 1;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 20px 0;
-    min-height: 0; /* Important for flex children in flex container */
+  flex-grow: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 20px 20px 0;
+  min-height: 0;
+  height: calc(100vh - 60px);
 }
 
 .columns {
@@ -526,6 +530,7 @@ button, input, select, textarea {
 .clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   white-space: normal;
@@ -769,7 +774,7 @@ button, input, select, textarea {
     font-size: 16px;
     font-weight: 600;
     color: var(--color-text-primary);
-    margin-top: 0px;
+    margin-top: 10px;
     margin-bottom: 12px;
 }
 

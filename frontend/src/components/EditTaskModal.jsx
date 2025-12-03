@@ -45,7 +45,7 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
         ]))
         : {};
 
-    const getUserName = (userId) => userMap[userId] || 'Unknown User';
+    const getUserName = (userId) => userMap[userId] || 'System';
     const currentUserName = getUserName(currentUserId);
 
 
@@ -65,7 +65,7 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
         const commentsResponse = await apiClient.getTaskComments(card.id);
         const formattedComments = commentsResponse.map(c => ({
             id: c.id,
-            user: c.author ? getUserName(c.author) : 'Unknown User', // Используем author если есть
+            user: c.author ? getUserName(c.author) : 'System',
             text: c.content,
             date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         }));
@@ -207,7 +207,7 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
         ]))
         : {};
 
-    const getUserName = (userId) => userMap[userId] || 'Unknown User';
+    const getUserName = (userId) => userMap[userId] || 'System';
     };
 
 

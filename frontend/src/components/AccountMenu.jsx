@@ -1,5 +1,5 @@
 // frontend/src/components/AccountMenu.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LogOut, X, Save, KeyRound, User, Mail } from 'lucide-react';
 import apiClient from '../api';
 
@@ -11,6 +11,7 @@ function AccountMenu({ onClose, onLogout, currentUser }) {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [passwordStrength, setPasswordStrength] = useState('');
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Load current user data when component mounts
     useEffect(() => {
@@ -135,6 +136,23 @@ function AccountMenu({ onClose, onLogout, currentUser }) {
             default: return '';
         }
     };
+
+    const handleLogout = useCallback(() => {
+      if (isLoggingOut) return;
+      
+      setIsLoggingOut(true);
+      try {
+        if (onClose) onClose();
+        if (onLogout) {
+          const shouldContinue = onLogout();
+          if (shouldContinue === false) return;
+        }
+      } catch (error) {
+        console.error('Logout error:', error);
+      } finally {
+        setIsLoggingOut(false);
+      }
+    }, [onClose, onLogout, isLoggingOut]);
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -281,19 +299,19 @@ function AccountMenu({ onClose, onLogout, currentUser }) {
             
                 {/* Footer with Logout */}
                 <div className="menu-footer">
-                    <button 
+                    <button
                         className="menu-item btn-link logout-btn" 
-                        onClick={onLogout}
-                        disabled={loading}
+                        onClick={handleLogout}
+                        disabled={loading || isLoggingOut}
                         style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px',
-                            color: '#ff6b6b'
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        color: '#ff6b6b'
                         }}
                     >
                         <LogOut size={18} /> 
-                        Log Out
+                        {isLoggingOut ? 'Logging out...' : 'Log Out'}
                     </button>
                 </div>
             </div>

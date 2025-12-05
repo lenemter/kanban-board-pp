@@ -1,3 +1,4 @@
+import enum
 from typing import Any, Union
 from pydantic import BaseModel, EmailStr
 import pydantic
@@ -35,11 +36,18 @@ class PasswordStr(str):
         return value
 
 
+class Theme(int, enum.Enum):
+    light = 1
+    dark = 2
+    purple = 3
+
+
 class UserPublic(BaseModel):
     id: int
     email: EmailStr
     name: str
     is_verified: bool
+    theme: Theme
 
 
 class UserCreate(BaseModel):
@@ -52,3 +60,4 @@ class UserUpdate(BaseModel):
     email: UnsetType | EmailStr = Unset
     name: UnsetType | str = Unset
     password: UnsetType | PasswordStr = Unset
+    theme: UnsetType | Theme = Unset

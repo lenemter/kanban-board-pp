@@ -19,7 +19,7 @@ async def get_subtask(board_column_and_task: api.dependencies.BoardColumnTaskDep
     response_model=api.schemas.SubtaskPublic
 )
 async def create_subtask(
-    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    board_column_and_task: api.dependencies.BoardCollaboratorColumnTaskDep,
     subtask_create: api.schemas.SubtaskCreate,
     session: api.dependencies.SessionDep,
 ):

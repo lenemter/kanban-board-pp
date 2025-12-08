@@ -41,7 +41,7 @@ async def get_tasks(board_and_column: api.dependencies.BoardColumnDep, session: 
 
 @router.post("/columns/{column_id}/tasks", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskPublic)
 async def add_task(
-    board_and_column: api.dependencies.BoardColumnDep,
+    board_and_column: api.dependencies.BoardCollaboratorColumnDep,
     task_create: api.schemas.TaskCreate,
     current_user: api.dependencies.CurrentUserDep,
     session: api.dependencies.SessionDep,
@@ -84,7 +84,7 @@ async def update_task(
 
 @router.patch("/tasks/{task_id}/move", response_model=api.schemas.TaskPublic)
 async def move_task(
-    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    board_column_and_task: api.dependencies.BoardCollaboratorColumnTaskDep,
     move_payload: api.schemas.MoveTaskPayload,
     session: api.dependencies.SessionDep,
 ):
@@ -104,7 +104,7 @@ async def move_task(
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
-    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    board_column_and_task: api.dependencies.BoardCollaboratorColumnTaskDep,
     session: api.dependencies.SessionDep,
 ):
     _, _, task = board_column_and_task
@@ -113,7 +113,7 @@ async def delete_task(
 
 @router.post("/tasks/{task_id}/tags", status_code=status.HTTP_201_CREATED, response_model=api.schemas.TaskTagPublic)
 async def add_task_tag(
-    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    board_column_and_task: api.dependencies.BoardCollaboratorColumnTaskDep,
     task_tag_create: api.schemas.TaskTagCreate,
     session: api.dependencies.SessionDep,
 ):

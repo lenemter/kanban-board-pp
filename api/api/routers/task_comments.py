@@ -22,7 +22,7 @@ async def get_task_comments(
     response_model=api.schemas.TaskCommentPublic
 )
 async def create_task_comment(
-    board_column_and_task: api.dependencies.BoardColumnTaskDep,
+    board_column_and_task: api.dependencies.BoardCollaboratorColumnTaskDep,
     task_comment_create: api.schemas.TaskCommentCreate,
     current_user: api.dependencies.CurrentUserDep,
     session: api.dependencies.SessionDep,

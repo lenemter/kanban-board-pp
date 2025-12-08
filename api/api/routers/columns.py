@@ -64,7 +64,7 @@ async def move_column(
 
 @router.delete("/columns/{column_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_column(
-    board_and_column: api.dependencies.BoardColumnDep,
+    board_and_column: api.dependencies.BoardCollaboratorColumnDep,
     session: api.dependencies.SessionDep
 ) -> None:
     _, column = board_and_column

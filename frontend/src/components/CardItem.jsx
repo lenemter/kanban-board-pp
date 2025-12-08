@@ -65,8 +65,12 @@ function CardItem({ card, index, onOpenEdit, isReadOnly = false }) {
             </div>
 
             <div className="meta">
-                <span><User size={14} /> {card.assignee_name || card.assignee_id || ''}</span>
-                <span><Clock size={14} /> {formatDate(card.due_date)}</span>
+                {(card.assignee_name || card.assignee_id) && (
+                  <span><User size={14} /> {card.assignee_name || card.assignee_id}</span>
+                )}
+                {card.due_date && (
+                  <span><Clock size={14} /> {formatDate(card.due_date)}</span>
+                )}
             </div>
           </div>
         </div>

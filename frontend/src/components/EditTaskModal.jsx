@@ -278,13 +278,26 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
 
                         <div className="meta-group">
                             <label>Due Date</label>
-                            <input
-                                type="date"
-                                value={dueDate}
-                                onChange={e => setDueDate(e.target.value)}
-                                disabled={isSaving || isReadOnly}
-                                readOnly={isReadOnly}
-                            />
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                    type="date"
+                                    value={dueDate}
+                                    onChange={e => setDueDate(e.target.value)}
+                                    disabled={isSaving || isReadOnly}
+                                    readOnly={isReadOnly}
+                                    style={{ flex: 1 }}
+                                />
+                                {dueDate && !isReadOnly && (
+                                    <button 
+                                        className="icon-btn" 
+                                        onClick={() => setDueDate('')}
+                                        title="Remove due date"
+                                        disabled={isSaving}
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 

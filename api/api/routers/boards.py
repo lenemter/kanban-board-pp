@@ -49,7 +49,7 @@ async def get_board(board: api.dependencies.BoardViewAccessDep):
 
 @router.patch("/boards/{board_id}", response_model=api.schemas.BoardPublic)
 async def update_board(
-    board: api.dependencies.BoardCollaboratorAccessDep,
+    board: api.dependencies.BoardOwnerAccessDep,
     board_update: api.schemas.BoardUpdate,
     session: api.dependencies.SessionDep
 ):

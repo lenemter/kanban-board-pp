@@ -1,6 +1,6 @@
 // frontend/src/components/AddUserModal.jsx
 import React, { useState, useEffect } from 'react';
-import { User, Link as LinkIcon, Copy, Check } from 'lucide-react';
+import { UserPlus, Link as LinkIcon, Copy, Check } from 'lucide-react';
 import apiClient from '../api';
 
 function AddUserModal({ onClose, onSelectAssignee, onAddUser, currentBoardId, currentBoard, isOwner }) { 
@@ -282,7 +282,7 @@ function AddUserModal({ onClose, onSelectAssignee, onAddUser, currentBoardId, cu
           disabled={loading || !isOwner || !email}
           title={!isOwner ? 'Only the board owner can add users' : ''}
         >
-          <User size={18} /> {loading ? 'Adding...' : 'Add User'}
+          <UserPlus size={18} /> {loading ? 'Adding...' : 'Add User'}
         </button>
       </div>
     </div>

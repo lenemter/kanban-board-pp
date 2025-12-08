@@ -174,7 +174,6 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
         console.log('Changing theme to:', themeId);
         setSelectedTheme(themeId);
         setLoading(true);
-        clearMessages();
 
         try {
             // Update theme on the server
@@ -191,12 +190,6 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                     onThemeUpdate(updatedUser);
                 }
             }
-
-            setMessage({
-                type: 'success',
-                text: 'Theme updated successfully!'
-            });
-
         } catch (error) {
             console.error('Failed to update theme:', error);
             setMessage({

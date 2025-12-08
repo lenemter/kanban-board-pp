@@ -10,7 +10,7 @@ import CreateBoardModal from '../components/CreateBoardModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AccountMenu from '../components/AccountMenu';
 import apiClient from '../api';
-import { UserPlus, Trash2, User, ArrowLeft, Plus, MoreVertical, Eye } from 'lucide-react';
+import { Settings, Trash2, User, ArrowLeft, Plus, MoreVertical, Eye } from 'lucide-react';
 
 const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers = []) => {
     const board = {
@@ -520,7 +520,7 @@ function BoardPage({ onLogout }) {
                                 disabled={isReadOnly}
                                 title={isReadOnly ? 'Read-only access' : 'Add user to board'}
                             >
-                                <UserPlus size={16} />
+                                <Settings size={16} />
                                 {isOwner ? 'Manage Access' : 'View Users'}
                             </button>
                         )}

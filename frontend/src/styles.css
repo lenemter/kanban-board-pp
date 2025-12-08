@@ -514,7 +514,6 @@ button, input, select, textarea {
 .column.dragging {
     box-shadow: 0 15px 35px var(--shadow-soft);
     opacity: 0.9;
-    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .column.drop-target {
@@ -524,7 +523,7 @@ button, input, select, textarea {
 
 .column.add-column {
     background: transparent;
-    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border: 2px dashed var(--color-border-panel-stroke);
     display: flex;
     align-items: center;
     justify-content: center;

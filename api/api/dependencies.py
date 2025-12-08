@@ -20,7 +20,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 # --- User Validation ---
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{api.utils.PREFIX}/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{api.utils.PREFIX}/token", auto_error=False)
 
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep) -> api.db.User:
@@ -29,6 +29,9 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: Ses
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+
+    if token is None:
+        raise credentials_exception
 
     secret_key = os.getenv("SECRET_KEY")
     assert secret_key is not None
@@ -144,7 +147,7 @@ BoardTagViewDep = Annotated[tuple[api.db.Board, api.db.BoardTag], Depends(get_bo
 
 
 def get_board_and_column(
-    current_user: CurrentUserDep,
+    current_user: MaybeCurrentUserDep,
     column_id: int,
     session: SessionDep
 ) -> tuple[api.db.Board, api.db.Column]:
@@ -181,7 +184,7 @@ BoardCollaboratorColumnDep = Annotated[
 
 
 def get_board_column_and_task(
-    current_user: CurrentUserDep,
+    current_user: MaybeCurrentUserDep,
     task_id: int,
     session: SessionDep
 ) -> tuple[api.db.Board, api.db.Column, api.db.Task]:

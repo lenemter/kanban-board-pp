@@ -75,7 +75,7 @@ async def delete_board(board: api.dependencies.BoardOwnerAccessDep, session: api
 
 
 @router.get("/boards/{board_id}/users", response_model=list[api.schemas.UserPublic])
-def get_board_users(board: api.dependencies.BoardCollaboratorAccessDep, session: api.dependencies.SessionDep):
+def get_board_users(board: api.dependencies.BoardViewAccessDep, session: api.dependencies.SessionDep):
     return api.db.get_board_users(session, board)
 
 

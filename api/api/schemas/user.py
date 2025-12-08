@@ -40,6 +40,8 @@ class Theme(int, enum.Enum):
     light = 1
     dark = 2
     purple = 3
+    amoled = 4
+    mint = 5
 
 
 class UserPublic(BaseModel):

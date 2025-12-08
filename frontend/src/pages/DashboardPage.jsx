@@ -12,6 +12,17 @@ function DashboardPage({ onLogout }) {
     const [currentUser, setCurrentUser] = useState(null);
     const [showCreateBoard, setShowCreateBoard] = useState(false);
     const [showAccount, setShowAccount] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
+
+    const updateCurrentUser = async () => {
+        try {
+            const user = await apiClient.getUserMe();
+            setCurrentUser(user);
+            console.log('User updated, theme:', user.theme);
+        } catch (error) {
+            console.error('Failed to update user:', error);
+        }
+    };
 
     const loadInitialData = useCallback(async () => {
         if (!apiClient.token) {
@@ -201,11 +212,12 @@ function DashboardPage({ onLogout }) {
                 />
             )}
 
-            {showAccount && currentUser && (
+            {showAccount && isAuthenticated && currentUser && (
                 <AccountMenu
                     onClose={() => setShowAccount(false)}
                     onLogout={handleLogout}
                     currentUser={currentUser}
+                    onThemeUpdate={updateCurrentUser}
                 />
             )}
         </div>

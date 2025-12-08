@@ -91,8 +91,18 @@ function BoardPage({ onLogout }) {
     const [columnToDeleteTitle, setColumnToDeleteTitle] = useState('');
     const [boardToDelete, setBoardToDelete] = useState(null);
 
+    const updateCurrentUser = async () => {
+        try {
+            const user = await apiClient.getUserMe();
+            setCurrentUser(user);
+            console.log('User updated, theme:', user.theme);
+        } catch (error) {
+            console.error('Failed to update user:', error);
+        }
+    };
+
     const handleLogout = () => {
-        setCurrentUser(null); 
+        setCurrentUser(null);
         setBoard(null);
 
         if (onLogout) {
@@ -185,7 +195,7 @@ function BoardPage({ onLogout }) {
 
         } catch (error) {
             console.error("Failed to load board details:", error);
-            
+
             // If board not found or access denied, redirect
             if (error.message.includes('404') || error.message.includes('not found')) {
                 navigate('/dashboard');
@@ -203,7 +213,7 @@ function BoardPage({ onLogout }) {
 
     const handleCreateTask = async (columnId, taskData) => {
         if (isReadOnly) return;
-        
+
         try {
             await apiClient.createTask(columnId, taskData);
             loadBoardData(boardId);
@@ -215,7 +225,7 @@ function BoardPage({ onLogout }) {
 
     const handleUpdateTask = async (taskId, taskData) => {
         if (isReadOnly) return;
-        
+
         try {
             await apiClient.updateTask(taskId, taskData);
             loadBoardData(boardId);
@@ -227,7 +237,7 @@ function BoardPage({ onLogout }) {
 
     const handleCreateColumn = async (columnName) => {
         if (isReadOnly) return;
-        
+
         try {
             await apiClient.createColumn(boardId, columnName);
             loadBoardData(boardId);
@@ -240,7 +250,7 @@ function BoardPage({ onLogout }) {
 
     const handleDeleteColumn = async () => {
         if (isReadOnly) return;
-        
+
         try {
             await apiClient.deleteColumn(columnToDeleteId);
             loadBoardData(boardId);
@@ -252,7 +262,7 @@ function BoardPage({ onLogout }) {
 
     const handleCreateNewBoard = async (name) => {
         if (!isAuthenticated) return;
-        
+
         try {
             const newBoard = await apiClient.createBoard(name);
             setAvailableBoards(prev => [...prev, newBoard]);
@@ -266,7 +276,7 @@ function BoardPage({ onLogout }) {
 
     const handleDeleteBoard = async () => {
         if (isReadOnly) return;
-        
+
         try {
             await apiClient.deleteBoard(boardToDelete.id);
             setAvailableBoards(prev => prev.filter(b => b.id !== boardToDelete.id));
@@ -641,6 +651,7 @@ function BoardPage({ onLogout }) {
                     onClose={() => setShowAccount(false)}
                     onLogout={handleLogout}
                     currentUser={currentUser}
+                    onThemeUpdate={updateCurrentUser}
                 />
             )}
         </div>

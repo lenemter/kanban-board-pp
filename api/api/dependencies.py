@@ -23,7 +23,7 @@ SessionDep = Annotated[Session, Depends(get_session)]
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{api.utils.PREFIX}/token")
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep) -> api.db.User:
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep) -> api.db.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -50,7 +50,15 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], sessio
     return user
 
 
+def maybe_get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: SessionDep) -> api.db.User | None:
+    try:
+        return get_current_user(token, session)
+    except HTTPException:
+        return None
+
+
 CurrentUserDep = Annotated[api.db.User, Depends(get_current_user)]
+MaybeCurrentUserDep = Annotated[api.db.User | None, Depends(maybe_get_current_user)]
 
 # -- Board ---
 
@@ -76,7 +84,11 @@ def board_if_user_collaborator(board_id: int, current_user: CurrentUserDep, sess
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
 
 
-def board_if_accessible_by_user(board_id: int, current_user: CurrentUserDep, session: SessionDep) -> api.db.Board:
+def board_if_accessible_by_user(
+    board_id: int,
+    maybe_current_user: MaybeCurrentUserDep,
+    session: SessionDep
+) -> api.db.Board:
     board = session.get(api.db.Board, board_id)
     if board is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Board not found")
@@ -84,7 +96,10 @@ def board_if_accessible_by_user(board_id: int, current_user: CurrentUserDep, ses
     if board.is_public:
         return board
 
-    return board_if_user_collaborator(board_id, current_user, session)
+    if maybe_current_user is None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
+
+    return board_if_user_collaborator(board_id, maybe_current_user, session)
 
 
 BoardOwnerAccessDep = Annotated[api.db.Board, Depends(board_if_owned_by_user)]

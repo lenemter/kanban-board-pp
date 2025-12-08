@@ -47,6 +47,19 @@ async def get_board(board: api.dependencies.BoardViewAccessDep):
     return board
 
 
+@router.get("/boards/{board_id}/has-collaborator-access", response_model=bool)
+async def get_user_has_collaborator_to_board(
+    board_id: int,
+    current_user: api.dependencies.CurrentUserDep,
+    session: api.dependencies.SessionDep
+) -> bool:
+    try:
+        api.dependencies.board_if_user_collaborator(board_id, current_user, session)
+        return True
+    except HTTPException:
+        return False
+
+
 @router.patch("/boards/{board_id}", response_model=api.schemas.BoardPublic)
 async def update_board(
     board: api.dependencies.BoardOwnerAccessDep,

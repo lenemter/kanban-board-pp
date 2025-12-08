@@ -1,3 +1,4 @@
+// frontend/src/components/Board.jsx
 import React, { useState } from 'react';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd'; 
 import Column from './Column';
@@ -11,7 +12,8 @@ function Board({
   onOpenCreateColumn, 
   onRequestDeleteColumn,
   currentBoardId,
-  onReloadBoard 
+  onReloadBoard,
+  isReadOnly = false
 }) {
   const [isDraggingColumn, setIsDraggingColumn] = useState(false);
   
@@ -34,20 +36,23 @@ function Board({
   };
 
   const onDragStart = (start) => {
-    // Определяем, началось ли перетаскивание колонки
+    if (isReadOnly) return;
+    
     if (start.type === 'column') {
       setIsDraggingColumn(true);
     }
   };
 
   const onDragEnd = async (result) => {
+    if (isReadOnly) return;
+    
     setIsDraggingColumn(false);
     
     const { destination, source, draggableId, type } = result;
     
     if (!destination) return;
 
-    // Обработка перемещения колонок
+    // Handle column reordering
     if (type === 'column') {
       if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
@@ -87,7 +92,7 @@ function Board({
       return;
     }
 
-    // Обработка перемещения задач
+    // Handle task moving
     if (type === 'task') {
       if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
@@ -122,7 +127,6 @@ function Board({
       onMoveLocal(newBoard);
 
       try {
-        // compute before/after based on the updated destCol.card_ids in newBoard
         const insertedIndex = destCol.card_ids.findIndex(id => Number(id) === taskId);
         let before_id = null;
         let after_id = null;
@@ -133,7 +137,6 @@ function Board({
           after_id = Number(destCol.card_ids[insertedIndex + 1]);
         }
 
-        // pass before_id and after_id to the API so it knows which tasks this one was moved between
         await apiClient.moveTask(taskId, destColId, before_id, after_id);
       } catch (error) {
         console.error('Failed to persist task move:', error);
@@ -144,8 +147,16 @@ function Board({
 
   return (
     <div className="board-wrap">
-      <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <Droppable droppableId="board-columns" direction="horizontal" type="column">
+      <DragDropContext 
+        onDragStart={onDragStart} 
+        onDragEnd={onDragEnd}
+      >
+        <Droppable 
+          droppableId="board-columns" 
+          direction="horizontal" 
+          type="column"
+          isDropDisabled={isReadOnly}
+        >
           {(provided, snapshot) => (
             <div 
               className={`columns ${isDraggingColumn ? 'column-dragging' : ''} ${snapshot.isDraggingOver ? 'drag-over' : ''}`}
@@ -161,25 +172,28 @@ function Board({
                   onOpenCreate={() => onOpenCreate(col.id)}
                   onOpenEdit={onOpenEdit}
                   onRequestDelete={() => onRequestDeleteColumn && onRequestDeleteColumn(col.id, col.title)}
+                  isReadOnly={isReadOnly}
                 />
               ))}
               
               {provided.placeholder}
 
-              <div
-                className={`column add-column ${snapshot.isDraggingOver ? 'drag-over' : ''}`}
-                role="button"
-                tabIndex={0}
-                onClick={onOpenCreateColumn}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onOpenCreateColumn();
-                  }
-                }}
-              >
-                <div className="add-column-button">+ Add Column</div>
-              </div>
+              {!isReadOnly && (
+                <div
+                  className={`column add-column ${snapshot.isDraggingOver ? 'drag-over' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={onOpenCreateColumn}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onOpenCreateColumn();
+                    }
+                  }}
+                >
+                  <div className="add-column-button">+ Add Column</div>
+                </div>
+              )}
             </div>
           )}
         </Droppable>

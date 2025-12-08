@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
@@ -62,15 +63,10 @@ function App() {
             )
           } 
         />
+        {/* Board route - accessible by anyone (public boards) or authenticated users */}
         <Route 
           path="/board/:boardId" 
-          element={
-            isAuthenticated ? (
-              <BoardPage />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
+          element={<BoardPage onLogout={handleLogout} />}
         />
         <Route 
           path="/" 

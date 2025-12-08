@@ -16,4 +16,4 @@ class BoardCreate(BaseModel):
 
 class BoardUpdate(BaseModel):
     name: UnsetType | str = Unset
-    is_public: UnsetType | str = Unset
+    is_public: UnsetType | bool = Unset

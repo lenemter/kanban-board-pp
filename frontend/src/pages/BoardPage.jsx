@@ -1,3 +1,4 @@
+// frontend/src/pages/BoardPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Board from '../components/Board';
@@ -9,13 +10,14 @@ import CreateBoardModal from '../components/CreateBoardModal';
 import ConfirmModal from '../components/ConfirmModal';
 import AccountMenu from '../components/AccountMenu';
 import apiClient from '../api';
-import { UserPlus, Trash2, User, ArrowLeft, Plus, MoreVertical } from 'lucide-react';
+import { UserPlus, Trash2, User, ArrowLeft, Plus, MoreVertical, Eye } from 'lucide-react';
 
 const transformApiToBoardFormat = (boardDetails, apiColumnsWithTasks, boardUsers = []) => {
     const board = {
         id: boardDetails.id,
         title: boardDetails.name,
         owner_id: boardDetails.owner_id,
+        is_public: boardDetails.is_public,
         cards: [],
         columns: [],
     };
@@ -72,6 +74,8 @@ function BoardPage({ onLogout }) {
     const [availableBoards, setAvailableBoards] = useState([]);
     const [showAccount, setShowAccount] = useState(false);
     const [boardMenuOpen, setBoardMenuOpen] = useState(null);
+    const [isReadOnly, setIsReadOnly] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
 
     // Modal states
     const [showCreate, setShowCreate] = useState(false);
@@ -88,16 +92,29 @@ function BoardPage({ onLogout }) {
     const [boardToDelete, setBoardToDelete] = useState(null);
 
     const handleLogout = () => {
-            setCurrentUser(null); 
-            setBoard(null);
+        setCurrentUser(null); 
+        setBoard(null);
 
-            if (onLogout) {
-                onLogout();
-            } else {
-                apiClient.clearToken();
-                navigate('/login');
-            }
-        };
+        if (onLogout) {
+            onLogout();
+        } else {
+            apiClient.clearToken();
+            navigate('/login');
+        }
+    };
+
+    // Check if user has edit access
+    const checkBoardAccess = useCallback(async (boardId) => {
+        try {
+            const hasAccess = await apiClient.checkBoardCollaboratorAccess(boardId);
+            setIsReadOnly(!hasAccess);
+            return hasAccess;
+        } catch (error) {
+            console.warn('Could not check board access:', error);
+            setIsReadOnly(true);
+            return false;
+        }
+    }, []);
 
     // Load current user and available boards on mount
     useEffect(() => {
@@ -105,6 +122,7 @@ function BoardPage({ onLogout }) {
             try {
                 const user = await apiClient.getUserMe();
                 setCurrentUser(user);
+                setIsAuthenticated(true);
 
                 // Load available boards
                 setLoadingBoards(true);
@@ -112,15 +130,12 @@ function BoardPage({ onLogout }) {
                 setAvailableBoards(boardsList || []);
             } catch (error) {
                 console.error("Failed to load initial data:", error);
-                if (error.message.includes('token is missing') || error.message.includes('401')) {
-                    if (onLogout) {
-                        onLogout();
-                    } else {
-                        apiClient.clearToken();
-                    }
-                }
+                // User is not authenticated, but they might still view a public board
+                setIsAuthenticated(false);
+                setCurrentUser(null);
+                setAvailableBoards([]);
             } finally {
-                setLoadingBoards(false); //
+                setLoadingBoards(false);
             }
         };
 
@@ -133,6 +148,14 @@ function BoardPage({ onLogout }) {
             // Load board details
             const boardDetails = await apiClient.getBoard(boardId);
 
+            // Check access if authenticated
+            if (isAuthenticated) {
+                await checkBoardAccess(boardId);
+            } else {
+                // Not authenticated - read-only mode
+                setIsReadOnly(true);
+            }
+
             // Load columns
             const apiColumns = await apiClient.getColumns(boardId);
 
@@ -144,13 +167,15 @@ function BoardPage({ onLogout }) {
 
             const columnsWithTasks = await Promise.all(columnsWithTasksPromises);
 
-            // Load board users
+            // Load board users if authenticated
             let users = [];
-            try {
-                users = await apiClient.getBoardUsers(boardId) || [];
-            } catch (err) {
-                console.warn('Failed to load board users', err);
-                users = [];
+            if (isAuthenticated) {
+                try {
+                    users = await apiClient.getBoardUsers(boardId) || [];
+                } catch (err) {
+                    console.warn('Failed to load board users', err);
+                    users = [];
+                }
             }
 
             const transformedBoard = transformApiToBoardFormat(boardDetails, columnsWithTasks, users);
@@ -160,29 +185,27 @@ function BoardPage({ onLogout }) {
 
         } catch (error) {
             console.error("Failed to load board details:", error);
-            if (error.message.includes('token is missing') || error.message.includes('401')) {
-                if (onLogout) {
-                    onLogout();
-                } else {
-                    apiClient.clearToken();
-                }
+            
+            // If board not found or access denied, redirect
+            if (error.message.includes('404') || error.message.includes('not found')) {
+                navigate('/dashboard');
             }
         } finally {
             setLoading(false);
         }
-    }, [navigate]);
+    }, [navigate, isAuthenticated, checkBoardAccess]);
 
     useEffect(() => {
-        if (boardId && currentUser) {
+        if (boardId) {
             loadBoardData(boardId);
         }
-    }, [boardId, currentUser, loadBoardData]);
+    }, [boardId, loadBoardData]);
 
     const handleCreateTask = async (columnId, taskData) => {
+        if (isReadOnly) return;
+        
         try {
-            const newTask = await apiClient.createTask(columnId, taskData);
-
-            // Reload board data
+            await apiClient.createTask(columnId, taskData);
             loadBoardData(boardId);
         } catch (error) {
             console.error("Error creating task:", error);
@@ -191,6 +214,8 @@ function BoardPage({ onLogout }) {
     };
 
     const handleUpdateTask = async (taskId, taskData) => {
+        if (isReadOnly) return;
+        
         try {
             await apiClient.updateTask(taskId, taskData);
             loadBoardData(boardId);
@@ -201,6 +226,8 @@ function BoardPage({ onLogout }) {
     };
 
     const handleCreateColumn = async (columnName) => {
+        if (isReadOnly) return;
+        
         try {
             await apiClient.createColumn(boardId, columnName);
             loadBoardData(boardId);
@@ -212,6 +239,8 @@ function BoardPage({ onLogout }) {
     };
 
     const handleDeleteColumn = async () => {
+        if (isReadOnly) return;
+        
         try {
             await apiClient.deleteColumn(columnToDeleteId);
             loadBoardData(boardId);
@@ -222,26 +251,26 @@ function BoardPage({ onLogout }) {
     };
 
     const handleCreateNewBoard = async (name) => {
+        if (!isAuthenticated) return;
+        
         try {
             const newBoard = await apiClient.createBoard(name);
             setAvailableBoards(prev => [...prev, newBoard]);
             setShowCreateBoard(false);
-            // Navigate to the new board
             navigate(`/board/${newBoard.id}`);
         } catch (error) {
             console.error("Error creating board:", error);
-            throw new Error(error.message || "Не удалось создать доску.");
+            throw new Error(error.message || "Failed to create board");
         }
     };
 
     const handleDeleteBoard = async () => {
+        if (isReadOnly) return;
+        
         try {
             await apiClient.deleteBoard(boardToDelete.id);
-
-            // Remove the board from the list
             setAvailableBoards(prev => prev.filter(b => b.id !== boardToDelete.id));
 
-            // If we're currently on the deleted board, redirect to dashboard
             if (Number(boardId) === boardToDelete.id) {
                 navigate('/dashboard');
             }
@@ -256,7 +285,9 @@ function BoardPage({ onLogout }) {
     };
 
     const handleMoveLocal = (newBoard) => {
-        setBoard(newBoard);
+        if (!isReadOnly) {
+            setBoard(newBoard);
+        }
     };
 
     const handleReloadBoard = () => {
@@ -276,6 +307,8 @@ function BoardPage({ onLogout }) {
             document.removeEventListener('click', handleClickOutside);
         };
     }, []);
+
+    const isOwner = currentUser && board && board.owner_id === currentUser.id;
 
     if (loading) {
         return (
@@ -302,161 +335,185 @@ function BoardPage({ onLogout }) {
 
     return (
         <div className="app-root">
-            {/* Sidebar */}
-            <div className="sidebar">
-                <h3 className="app-title">Kanban Board</h3>
+            {/* Sidebar - only show if authenticated */}
+            {isAuthenticated && (
+                <div className="sidebar">
+                    <h3 className="app-title">Kanban Board</h3>
 
-                <div className="boards-section">
-                    <div className="boards-header">Your Boards</div>
-                    <div className="boards-list">
-                        <Link to="/dashboard" className="board-item">
-                            <ArrowLeft size={16} style={{ marginRight: '8px' }} />
-                            Back to Dashboard
-                        </Link>
+                    <div className="boards-section">
+                        <div className="boards-header">Your Boards</div>
+                        <div className="boards-list">
+                            <Link to="/dashboard" className="board-item">
+                                <ArrowLeft size={16} style={{ marginRight: '8px' }} />
+                                Back to Dashboard
+                            </Link>
 
-                        {loadingBoards ? (
-                            <div className="board-item">Loading boards...</div>
-                        ) : (
-                            availableBoards.map(boardItem => {
-                                const isCurrentBoard = boardItem.id === Number(boardId);
-                                const isOwner = currentUser && boardItem.owner_id === currentUser.id;
+                            {loadingBoards ? (
+                                <div className="board-item">Loading boards...</div>
+                            ) : (
+                                availableBoards.map(boardItem => {
+                                    const isCurrentBoard = boardItem.id === Number(boardId);
+                                    const isBoardOwner = currentUser && boardItem.owner_id === currentUser.id;
 
-                                return (
-                                    <div
-                                        key={boardItem.id}
-                                        className={`board-item-container ${isCurrentBoard ? 'active' : ''}`}
-                                        style={{
-                                            position: 'relative',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            marginBottom: '4px'
-                                        }}
-                                    >
-                                        <Link
-                                            to={`/board/${boardItem.id}`}
-                                            className="board-item"
+                                    return (
+                                        <div
+                                            key={boardItem.id}
+                                            className={`board-item-container ${isCurrentBoard ? 'active' : ''}`}
                                             style={{
-                                                flex: 1,
-                                                display: 'block',
-                                                padding: '8px 10px',
-                                                textDecoration: 'none',
-                                                color: isCurrentBoard ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                                                fontWeight: isCurrentBoard ? '700' : '500',
-                                                backgroundColor: isCurrentBoard ? 'var(--color-card)' : 'transparent',
-                                                borderRadius: '4px'
+                                                position: 'relative',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                marginBottom: '4px'
                                             }}
                                         >
-                                            {boardItem.name}
-                                            {isOwner && (
-                                                <span style={{
-                                                    fontSize: '10px',
-                                                    marginLeft: '6px',
-                                                    opacity: 0.7,
-                                                    color: 'var(--color-text-muted)'
-                                                }}>
-                                                    (owner)
-                                                </span>
-                                            )}
-                                        </Link>
-
-                                        {isOwner && (
-                                            <button
-                                                className="icon-btn"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    setBoardMenuOpen(boardMenuOpen === boardItem.id ? null : boardItem.id);
-                                                }}
+                                            <Link
+                                                to={`/board/${boardItem.id}`}
+                                                className="board-item"
                                                 style={{
-                                                    marginLeft: '4px',
-                                                    padding: '4px',
-                                                    opacity: 0.6
+                                                    flex: 1,
+                                                    display: 'block',
+                                                    padding: '8px 10px',
+                                                    textDecoration: 'none',
+                                                    color: isCurrentBoard ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                                                    fontWeight: isCurrentBoard ? '700' : '500',
+                                                    backgroundColor: isCurrentBoard ? 'var(--color-card)' : 'transparent',
+                                                    borderRadius: '4px'
                                                 }}
                                             >
-                                                <MoreVertical size={14} />
-                                            </button>
-                                        )}
+                                                {boardItem.name}
+                                                {isBoardOwner && (
+                                                    <span style={{
+                                                        fontSize: '10px',
+                                                        marginLeft: '6px',
+                                                        opacity: 0.7,
+                                                        color: 'var(--color-text-muted)'
+                                                    }}>
+                                                        (owner)
+                                                    </span>
+                                                )}
+                                            </Link>
 
-                                        {boardMenuOpen === boardItem.id && (
-                                            <div
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    left: '0',
-                                                    right: '0',
-                                                    zIndex: 100,
-                                                    background: 'var(--color-panel)',
-                                                    border: '1px solid var(--color-border-default)',
-                                                    borderRadius: '8px',
-                                                    marginTop: '2px',
-                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                                                    overflow: 'hidden'
-                                                }}
-                                            >
+                                            {isBoardOwner && (
                                                 <button
-                                                    className="board-item"
-                                                    style={{
-                                                        width: '100%',
-                                                        textAlign: 'left',
-                                                        padding: '8px 12px',
-                                                        color: 'var(--color-danger)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '8px'
-                                                    }}
+                                                    className="icon-btn"
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         e.stopPropagation();
-                                                        setBoardToDelete(boardItem);
-                                                        setShowConfirmDeleteBoard(true);
-                                                        setBoardMenuOpen(null);
+                                                        setBoardMenuOpen(boardMenuOpen === boardItem.id ? null : boardItem.id);
+                                                    }}
+                                                    style={{
+                                                        marginLeft: '4px',
+                                                        padding: '4px',
+                                                        opacity: 0.6
                                                     }}
                                                 >
-                                                    <Trash2 size={14} />
-                                                    Delete Board
+                                                    <MoreVertical size={14} />
                                                 </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })
-                        )}
+                                            )}
 
+                                            {boardMenuOpen === boardItem.id && (
+                                                <div
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: '100%',
+                                                        left: '0',
+                                                        right: '0',
+                                                        zIndex: 100,
+                                                        background: 'var(--color-panel)',
+                                                        border: '1px solid var(--color-border-default)',
+                                                        borderRadius: '8px',
+                                                        marginTop: '2px',
+                                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                                                        overflow: 'hidden'
+                                                    }}
+                                                >
+                                                    <button
+                                                        className="board-item"
+                                                        style={{
+                                                            width: '100%',
+                                                            textAlign: 'left',
+                                                            padding: '8px 12px',
+                                                            color: 'var(--color-danger)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setBoardToDelete(boardItem);
+                                                            setShowConfirmDeleteBoard(true);
+                                                            setBoardMenuOpen(null);
+                                                        }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        Delete Board
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })
+                            )}
+
+                            <button
+                                className="board-item new-board-btn"
+                                onClick={() => setShowCreateBoard(true)}
+                            >
+                                <Plus size={16} style={{ marginRight: '8px' }} />
+                                New Board
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="sidebar-bottom">
                         <button
-                            className="board-item new-board-btn"
-                            onClick={() => setShowCreateBoard(true)}
+                            className="account-btn"
+                            onClick={() => setShowAccount(true)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                         >
-                            <Plus size={16} style={{ marginRight: '8px' }} />
-                            New Board
+                            <User size={20} />
+                            {currentUser?.name || 'Account'}
                         </button>
                     </div>
                 </div>
-
-                <div className="sidebar-bottom">
-                    <button
-                        className="account-btn"
-                        onClick={() => setShowAccount(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                    >
-                        <User size={20} />
-                        {currentUser?.name || 'Account'}
-                    </button>
-                </div>
-            </div>
+            )}
 
             {/* Main Content */}
             <div className="main-area">
                 <div className="topbar">
-                    <div className="top-left">{board.title}</div>
+                    <div className="top-left">
+                        {board.title}
+                        {isReadOnly && (
+                            <span style={{
+                                marginLeft: '12px',
+                                padding: '4px 10px',
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}>
+                                <Eye size={14} />
+                                View Only
+                            </span>
+                        )}
+                    </div>
                     <div className="top-right">
-                        <button
-                            className="btn"
-                            onClick={() => setShowAddUser(true)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                        >
-                            <UserPlus size={16} />
-                            Add User
-                        </button>
+                        {isAuthenticated && (
+                            <button
+                                className="btn"
+                                onClick={() => setShowAddUser(true)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                disabled={isReadOnly}
+                                title={isReadOnly ? 'Read-only access' : 'Add user to board'}
+                            >
+                                <UserPlus size={16} />
+                                {isOwner ? 'Manage Access' : 'View Users'}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -465,8 +522,10 @@ function BoardPage({ onLogout }) {
                         board={board}
                         onMoveLocal={handleMoveLocal}
                         onOpenCreate={(columnId) => {
-                            setTaskCreationColumnId(columnId);
-                            setShowCreate(true);
+                            if (!isReadOnly) {
+                                setTaskCreationColumnId(columnId);
+                                setShowCreate(true);
+                            }
                         }}
                         onOpenEdit={(cardId) => {
                             const card = board.cards.find(c => String(c.id) === String(cardId));
@@ -475,20 +534,27 @@ function BoardPage({ onLogout }) {
                                 setShowEdit(true);
                             }
                         }}
-                        onOpenCreateColumn={() => setShowCreateColumn(true)}
+                        onOpenCreateColumn={() => {
+                            if (!isReadOnly) {
+                                setShowCreateColumn(true);
+                            }
+                        }}
                         onRequestDeleteColumn={(columnId, columnTitle) => {
-                            setColumnToDeleteId(columnId);
-                            setColumnToDeleteTitle(columnTitle);
-                            setShowConfirmDeleteColumn(true);
+                            if (!isReadOnly) {
+                                setColumnToDeleteId(columnId);
+                                setColumnToDeleteTitle(columnTitle);
+                                setShowConfirmDeleteColumn(true);
+                            }
                         }}
                         currentBoardId={boardId}
                         onReloadBoard={handleReloadBoard}
+                        isReadOnly={isReadOnly}
                     />
                 </div>
             </div>
 
             {/* Modals */}
-            {showCreate && (
+            {showCreate && !isReadOnly && (
                 <CreateTaskModal
                     onClose={() => setShowCreate(false)}
                     onCreate={handleCreateTask}
@@ -507,10 +573,11 @@ function BoardPage({ onLogout }) {
                     onSave={handleUpdateTask}
                     boardUsers={boardUsers}
                     currentUserId={currentUser?.id}
+                    isReadOnly={isReadOnly}
                 />
             )}
 
-            {showAddUser && (
+            {showAddUser && isAuthenticated && (
                 <AddUserModal
                     onClose={() => setShowAddUser(false)}
                     onSelectAssignee={(userName) => {
@@ -520,24 +587,26 @@ function BoardPage({ onLogout }) {
                         loadBoardData(boardId);
                     }}
                     currentBoardId={boardId}
+                    currentBoard={board}
+                    isOwner={isOwner}
                 />
             )}
 
-            {showCreateColumn && (
+            {showCreateColumn && !isReadOnly && (
                 <CreateColumnModal
                     onClose={() => setShowCreateColumn(false)}
                     onCreate={handleCreateColumn}
                 />
             )}
 
-            {showCreateBoard && (
+            {showCreateBoard && isAuthenticated && (
                 <CreateBoardModal
                     onClose={() => setShowCreateBoard(false)}
                     onCreate={handleCreateNewBoard}
                 />
             )}
 
-            {showConfirmDeleteColumn && (
+            {showConfirmDeleteColumn && !isReadOnly && (
                 <ConfirmModal
                     title="Delete Column"
                     message={`Are you sure you want to delete column "${columnToDeleteTitle}"? All tasks in this column will also be deleted.`}
@@ -554,7 +623,7 @@ function BoardPage({ onLogout }) {
                 />
             )}
 
-            {showConfirmDeleteBoard && boardToDelete && (
+            {showConfirmDeleteBoard && !isReadOnly && boardToDelete && (
                 <ConfirmModal
                     title="Delete Board"
                     message={`Are you sure you want to delete board "${boardToDelete.name}"? All columns, tasks, and data in this board will be permanently deleted. This action cannot be undone.`}
@@ -566,8 +635,8 @@ function BoardPage({ onLogout }) {
                 />
             )}
 
-            {/* Account Menu Modal */}
-            {showAccount && currentUser && (
+            {/* Account Menu Modal - only if authenticated */}
+            {showAccount && isAuthenticated && currentUser && (
                 <AccountMenu
                     onClose={() => setShowAccount(false)}
                     onLogout={handleLogout}

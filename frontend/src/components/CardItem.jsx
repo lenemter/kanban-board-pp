@@ -1,3 +1,4 @@
+// frontend/src/components/CardItem.jsx
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { User, Clock, CheckSquare } from 'lucide-react'; 
@@ -17,7 +18,7 @@ function ToDifficultyString(priorityId) {
   return 'Medium';
 }
 
-function CardItem({ card, index, onOpenEdit }) {
+function CardItem({ card, index, onOpenEdit, isReadOnly = false }) {
   const formatDate = (d) => {
     if (!d) return '';
     const dt = new Date(d);
@@ -28,7 +29,11 @@ function CardItem({ card, index, onOpenEdit }) {
   };
 
   return (
-    <Draggable draggableId={`task-${card.id}`} index={index}>
+    <Draggable 
+      draggableId={`task-${card.id}`} 
+      index={index}
+      isDragDisabled={isReadOnly}
+    >
       {(provided, snapshot) => (
         <div
           className={`card ${snapshot.isDragging ? 'dragging' : ''}`}
@@ -36,6 +41,11 @@ function CardItem({ card, index, onOpenEdit }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           onDoubleClick={onOpenEdit}
+          style={{
+            ...provided.draggableProps.style,
+            cursor: isReadOnly ? 'pointer' : 'grab',
+            opacity: isReadOnly && snapshot.isDragging ? 0.5 : 1
+          }}
         >
           <div className="card-title">{card.title}</div>
           <div className="card-desc">{card.description}</div>

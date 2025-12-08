@@ -1,5 +1,6 @@
+// frontend/src/components/EditTaskModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Eye } from 'lucide-react';
 import apiClient from '../api';
 
 const PRIORITY_MAP = {
@@ -15,7 +16,7 @@ const PRIORITY_ID_MAP = {
 const DEFAULT_PRIORITY_STRING = 'Medium';
 
 
-function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }) {
+function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, isReadOnly = false }) {
 
     const initialPriorityString = PRIORITY_ID_MAP[card.priority] || DEFAULT_PRIORITY_STRING;
     const initialAssigneeId = card.assignee_id || '';
@@ -50,41 +51,41 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
 
 
     useEffect(() => {
-    const loadTaskDetails = async () => {
-        setLoading(true);
-        setError('');
-        try {
-        const subtasksResponse = await apiClient.getSubtasks(card.id);
-        const formattedSubtasks = subtasksResponse.map(s => ({
-            id: s.id,
-            text: s.title,
-            done: s.is_done,
-        }));
-        setSubtasks(formattedSubtasks);
+        const loadTaskDetails = async () => {
+            setLoading(true);
+            setError('');
+            try {
+                const subtasksResponse = await apiClient.getSubtasks(card.id);
+                const formattedSubtasks = subtasksResponse.map(s => ({
+                    id: s.id,
+                    text: s.title,
+                    done: s.is_done,
+                }));
+                setSubtasks(formattedSubtasks);
 
-        const commentsResponse = await apiClient.getTaskComments(card.id);
-        const formattedComments = commentsResponse.map(c => ({
-            id: c.id,
-            user: c.author ? getUserName(c.author) : 'System',
-            text: c.content,
-            date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        }));
-        setComments(formattedComments.reverse());
+                const commentsResponse = await apiClient.getTaskComments(card.id);
+                const formattedComments = commentsResponse.map(c => ({
+                    id: c.id,
+                    user: c.author ? getUserName(c.author) : 'System',
+                    text: c.content,
+                    date: new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                }));
+                setComments(formattedComments.reverse());
 
-        } catch (err) {
-        console.error("Failed to load task details:", err);
-        setError(err.message || 'Failed to load task details (Subtasks/Comments).');
-        } finally {
-        setLoading(false);
-        }
-    };
+            } catch (err) {
+                console.error("Failed to load task details:", err);
+                setError(err.message || 'Failed to load task details (Subtasks/Comments).');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    loadTaskDetails();
+        loadTaskDetails();
     }, [card.id, users]);
 
 
     const handleSave = async () => {
-        if (isSaving) return;
+        if (isSaving || isReadOnly) return;
 
         setIsSaving(true);
         setError('');
@@ -121,7 +122,7 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
     };
 
     const handleAddSubtask = async () => {
-        if (newSubtaskTitle.trim() === '' || isSaving) return;
+        if (newSubtaskTitle.trim() === '' || isSaving || isReadOnly) return;
 
         try {
             const newSubtask = await apiClient.createSubtask(card.id, newSubtaskTitle.trim());
@@ -139,6 +140,8 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
     };
 
     const handleToggleSubtask = async (subtaskId, currentDoneStatus) => {
+        if (isReadOnly) return;
+        
         const newDoneStatus = !currentDoneStatus;
 
         const subtaskToUpdate = subtasks.find(t => t.id === subtaskId);
@@ -168,6 +171,8 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
     };
 
     const handleRemoveSubtask = async (subtaskId) => {
+        if (isReadOnly) return;
+        
         setSubtasks(prev => prev.filter(t => t.id !== subtaskId));
 
         try {
@@ -179,7 +184,7 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
     };
 
     const handleAddComment = async () => {
-        if (newCommentText.trim() === '' || isSaving) return;
+        if (newCommentText.trim() === '' || isSaving || isReadOnly) return;
 
         try {
             const newComment = await apiClient.createTaskComment(card.id, newCommentText.trim());
@@ -197,26 +202,32 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
             console.error('Failed to add comment:', err);
             setError('Failed to add comment.');
         }
-
-    const users = boardUsers || [];
-
-    const userMap = users.length > 0 ?
-        Object.fromEntries(users.map(u => [
-            u.id,
-            u.name && u.name.trim() !== '' ? u.name : (u.email || `User #${u.id}`)
-        ]))
-        : {};
-
-    const getUserName = (userId) => userMap[userId] || 'System';
     };
-
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
             <div className="modal task-details-modal" onClick={e => e.stopPropagation()}>
 
                 <div className="modal-header">
-                    <h3 className="modal-title">Task Details</h3>
+                    <h3 className="modal-title">
+                        Task Details
+                        {isReadOnly && (
+                            <span style={{
+                                marginLeft: '12px',
+                                padding: '4px 8px',
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: '500',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}>
+                                <Eye size={14} />
+                                View Only
+                            </span>
+                        )}
+                    </h3>
                     <button className="icon-btn" onClick={onClose}><X size={24} /></button>
                 </div>
 
@@ -229,14 +240,19 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             className="modal-title-edit"
-                            disabled={isSaving}
+                            disabled={isSaving || isReadOnly}
+                            readOnly={isReadOnly}
                         />
                     </div>
 
                     <div className="task-meta-row">
                         <div className="meta-group">
                             <label>Priority</label>
-                            <select value={priority} onChange={e => setPriority(e.target.value)} disabled={isSaving}>
+                            <select 
+                                value={priority} 
+                                onChange={e => setPriority(e.target.value)} 
+                                disabled={isSaving || isReadOnly}
+                            >
                                 <option value="Low">Low</option>
                                 <option value="Medium">Medium</option>
                                 <option value="High">High</option>
@@ -245,7 +261,11 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
 
                         <div className="meta-group">
                             <label>Assignee</label>
-                            <select value={assigneeId} onChange={e => setAssigneeId(e.target.value)} disabled={isSaving}>
+                            <select 
+                                value={assigneeId} 
+                                onChange={e => setAssigneeId(e.target.value)} 
+                                disabled={isSaving || isReadOnly}
+                            >
                                 <option value="">Unassigned</option>
                                 {users.map(user => {
                                     const label = user.name && user.name.trim() !== '' ? user.name : user.email;
@@ -262,8 +282,8 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
                                 type="date"
                                 value={dueDate}
                                 onChange={e => setDueDate(e.target.value)}
-                                placeholder="e.g. 2025-10-20"
-                                disabled={isSaving}
+                                disabled={isSaving || isReadOnly}
+                                readOnly={isReadOnly}
                             />
                         </div>
                     </div>
@@ -273,7 +293,8 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
                         value={desc}
                         onChange={e => setDesc(e.target.value)}
                         placeholder="Enter task description"
-                        disabled={isSaving}
+                        disabled={isSaving || isReadOnly}
+                        readOnly={isReadOnly}
                     />
 
                     <h4 className="section-title">Subtasks {loading && subtasks.length === 0 ? '(Loading...)' : ''}</h4>
@@ -284,28 +305,42 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
                                     type="checkbox"
                                     checked={sub.done}
                                     onChange={() => handleToggleSubtask(sub.id, sub.done)}
-                                    disabled={isSaving}
+                                    disabled={isSaving || isReadOnly}
+                                    title={isReadOnly ? 'Read-only access' : ''}
+                                    style={{ cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
                                 />
                                 <span className={sub.done ? 'subtask-done' : ''}>{sub.text}</span>
-                                <button className="icon-btn remove-subtask-btn" onClick={() => handleRemoveSubtask(sub.id)} disabled={isSaving}>
-                                    <X size={16} />
-                                </button>
+                                {!isReadOnly && (
+                                    <button 
+                                        className="icon-btn remove-subtask-btn" 
+                                        onClick={() => handleRemoveSubtask(sub.id)} 
+                                        disabled={isSaving}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>
 
-                    <div className="add-input-group">
-                        <input
-                            value={newSubtaskTitle}
-                            onChange={e => setNewSubtaskTitle(e.target.value)}
-                            placeholder="Add a subtask..."
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubtask() }}
-                            disabled={isSaving}
-                        />
-                        <button className="icon-btn add-btn" onClick={handleAddSubtask} disabled={isSaving || newSubtaskTitle.trim() === ''}>
-                            <Plus size={18} />
-                        </button>
-                    </div>
+                    {!isReadOnly && (
+                        <div className="add-input-group">
+                            <input
+                                value={newSubtaskTitle}
+                                onChange={e => setNewSubtaskTitle(e.target.value)}
+                                placeholder="Add a subtask..."
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubtask() }}
+                                disabled={isSaving}
+                            />
+                            <button 
+                                className="icon-btn add-btn" 
+                                onClick={handleAddSubtask} 
+                                disabled={isSaving || newSubtaskTitle.trim() === ''}
+                            >
+                                <Plus size={18} />
+                            </button>
+                        </div>
+                    )}
 
                     <h4 className="section-title">Comments {loading && comments.length === 0 ? '(Loading...)' : ''}</h4>
                     <div className="comments-section">
@@ -330,27 +365,40 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId }
                         )}
                     </div>
 
-                    <div className="add-input-group comment-input-group">
-                        <input
-                            value={newCommentText}
-                            onChange={e => setNewCommentText(e.target.value)}
-                            placeholder="Write a comment..."
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment() }}
-                            disabled={isSaving}
-                        />
-                        <button className="icon-btn add-btn" onClick={handleAddComment} disabled={isSaving || newCommentText.trim() === ''}>
-                            <Plus size={18} />
-                        </button>
-                    </div>
+                    {!isReadOnly && (
+                        <div className="add-input-group comment-input-group">
+                            <input
+                                value={newCommentText}
+                                onChange={e => setNewCommentText(e.target.value)}
+                                placeholder="Write a comment..."
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleAddComment() }}
+                                disabled={isSaving}
+                            />
+                            <button 
+                                className="icon-btn add-btn" 
+                                onClick={handleAddComment} 
+                                disabled={isSaving || newCommentText.trim() === ''}
+                            >
+                                <Plus size={18} />
+                            </button>
+                        </div>
+                    )}
 
                 </div>
 
-
                 <div className="modal-actions">
-                    <button className="btn ghost" onClick={onClose} disabled={isSaving}>Cancel</button>
-                    <button className="btn" onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save Changes'}
+                    <button className="btn ghost" onClick={onClose}>
+                        {isReadOnly ? 'Close' : 'Cancel'}
                     </button>
+                    {!isReadOnly && (
+                        <button 
+                            className="btn" 
+                            onClick={handleSave} 
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

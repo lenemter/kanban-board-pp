@@ -1,3 +1,4 @@
+// frontend/src/api.js
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 class ApiClient {
@@ -31,15 +32,6 @@ class ApiClient {
       ...options,
       headers,
     };
-
-    if (config.body && typeof config.body === 'string') {
-        try {
-            const parsedBody = JSON.parse(config.body);
-            console.log('Request Body (Parsed JSON):', parsedBody); 
-        } catch (e) {
-            console.warn('Could not parse request body for logging (probably form data):', config.body);
-        }
-    }
 
     try {
       const response = await fetch(url, config);
@@ -75,7 +67,7 @@ class ApiClient {
     
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Вход не удался. Проверьте почту и пароль.');
+        throw new Error(errorData.detail || 'Login failed');
     }
 
     const data = await response.json();
@@ -94,7 +86,7 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.detail || 'Ошибка при регистрации.');
+      throw new Error(errorData.detail || 'Registration failed');
     }
     return await response.json();
   }
@@ -110,26 +102,6 @@ class ApiClient {
       this.clearToken();
       return false;
     }
-  }
-
-    clearToken() {
-      localStorage.removeItem('authToken');
-      this.token = null;
-    }
-
-  async resendVerification(username, password) {
-    const formData = new URLSearchParams();
-    formData.append('username', username);
-    formData.append('password', password);
-
-    return this.request('/resend-verification', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-      skipAuth: true,
-    });
   }
 
   // Users
@@ -197,6 +169,15 @@ class ApiClient {
     return this.request(`/boards/${boardId}/users?user_id=${userId}`, {
       method: 'DELETE',
     });
+  }
+
+  // NEW: Check if user has collaborator access to board
+  async checkBoardCollaboratorAccess(boardId) {
+    try {
+      return await this.request(`/boards/${boardId}/has-collaborator-access`, { method: 'GET' });
+    } catch (error) {
+      return false;
+    }
   }
 
   // Board Tags
@@ -276,7 +257,6 @@ class ApiClient {
   }
 
   async updateTask(taskId, data) {
-    console.log('Updating task with data:', data);
     return this.request(`/tasks/${taskId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

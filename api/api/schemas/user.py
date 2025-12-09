@@ -1,3 +1,4 @@
+# api/api/schemas/user.py
 import enum
 from typing import Any, Union
 from pydantic import BaseModel, EmailStr
@@ -42,6 +43,10 @@ class Theme(int, enum.Enum):
     purple = 3
     amoled = 4
     mint = 5
+    ocean = 6
+    sunset = 7
+    nord = 8
+    rosepine = 9
 
 
 class UserPublic(BaseModel):

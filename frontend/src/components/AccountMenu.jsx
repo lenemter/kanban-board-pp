@@ -1,39 +1,63 @@
 // frontend/src/components/AccountMenu.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LogOut, X, Save, KeyRound, User, Mail, Palette } from 'lucide-react';
 import apiClient from '../api';
 
-// Theme definitions with colors for preview
+// Обновленные темы (9 штук)
 const THEMES = [
     {
         id: 1,
         name: 'Light',
-        colors: ['#FFFFFF', '#F5F5F5', '#6366F1'],
+        colors: ['#F8FAFC', '#FFFFFF', '#3B82F6'],
         className: 'theme-light'
     },
     {
         id: 2,
         name: 'Dark',
-        colors: ['#1F2937', '#111827', '#8B5CF6'],
+        colors: ['#0F172A', '#1E293B', '#60A5FA'],
         className: 'theme-dark'
     },
     {
         id: 3,
-        name: 'Dark Purple',
-        colors: ['#1A1430', '#241A3D', '#C58AFF'],
+        name: 'Purple Dream',
+        colors: ['#1A0B2E', '#2D1B4E', '#A855F7'],
         className: 'theme-dark-purple'
     },
     {
         id: 4,
         name: 'Amoled',
-        colors: ['#000000', '#0A0A0A', '#FF6B6B'],
+        colors: ['#000000', '#0A0A0A', '#00D9FF'],
         className: 'theme-amoled'
     },
     {
         id: 5,
-        name: 'Mint',
-        colors: ['#E8F5F1', '#D1F0E8', '#10B981'],
+        name: 'Mint Fresh',
+        colors: ['#ECFDF5', '#FFFFFF', '#10B981'],
         className: 'theme-mint'
+    },
+    {
+        id: 6,
+        name: 'Ocean Blue',
+        colors: ['#0C1E2F', '#142939', '#0EA5E9'],
+        className: 'theme-ocean'
+    },
+    {
+        id: 7,
+        name: 'Sunset',
+        colors: ['#FFF7ED', '#FFFFFF', '#F97316'],
+        className: 'theme-sunset'
+    },
+    {
+        id: 8,
+        name: 'Nord',
+        colors: ['#2E3440', '#3B4252', '#88C0D0'],
+        className: 'theme-nord'
+    },
+    {
+        id: 9,
+        name: 'Rose Pine',
+        colors: ['#191724', '#1F1D2E', '#EB6F92'],
+        className: 'theme-rosepine'
     }
 ];
 
@@ -42,39 +66,34 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
     const [email, setEmail] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
-    const [selectedTheme, setSelectedTheme] = useState(1); // Default to Light
+    const [selectedTheme, setSelectedTheme] = useState(1);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [passwordStrength, setPasswordStrength] = useState('');
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [activeTab, setActiveTab] = useState('general'); // 'general' or 'appearance'
+    const [activeTab, setActiveTab] = useState('general');
 
-    // Load current user data when component mounts
     useEffect(() => {
         if (currentUser) {
             setUsername(currentUser.name || '');
             setEmail(currentUser.email || '');
 
-            // Get theme from API
             const userTheme = currentUser.theme;
             console.log('User theme from API:', userTheme, 'Type:', typeof userTheme);
-
-            // Convert theme to number if needed
+            
             const themeId = typeof userTheme === 'string' ? parseInt(userTheme, 10) : userTheme;
 
-            // Check if theme is valid (1-5)
-            if (themeId && themeId >= 1 && themeId <= 5) {
+            if (themeId && themeId >= 1 && themeId <= 9) {
                 setSelectedTheme(themeId);
-                console.log('Setting theme to:', themeId);
+                // Apply theme on mount
+                applyTheme(themeId);
             } else {
-                // If theme is invalid, default to Light (1)
                 setSelectedTheme(3);
-                console.log('Invalid theme, defaulting to Dark Purple (3)');
+                applyTheme(3);
             }
         }
     }, [currentUser]);
 
-    // Check password strength
     useEffect(() => {
         if (newPassword.length === 0) {
             setPasswordStrength('');
@@ -115,6 +134,11 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
             if (Object.keys(updateData).length > 0) {
                 await apiClient.updateUserMe(updateData);
                 setMessage({ type: 'success', text: 'Profile updated successfully!' });
+                
+                // Update current user if callback provided
+                if (onThemeUpdate) {
+                    await onThemeUpdate();
+                }
             } else {
                 setMessage({ type: 'info', text: 'No changes to save' });
             }
@@ -154,11 +178,9 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
             });
 
             setMessage({ type: 'success', text: 'Password changed successfully!' });
-
             setNewPassword('');
             setConfirmNewPassword('');
             setPasswordStrength('');
-
         } catch (error) {
             console.error('Failed to change password:', error);
             setMessage({
@@ -171,25 +193,23 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
     };
 
     const handleThemeChange = async (themeId) => {
-        console.log('Changing theme to:', themeId);
         setSelectedTheme(themeId);
         setLoading(true);
 
         try {
-            // Update theme on the server
+            // Save theme to backend
             await apiClient.updateUserMe({ theme: themeId });
-
-            // Apply theme locally with animation
+            
+            // Apply theme locally
             applyTheme(themeId);
 
             // Update current user
-            if (currentUser) {
-                const updatedUser = { ...currentUser, theme: themeId };
-                // If there is a callback onThemeUpdate, call it
-                if (onThemeUpdate) {
-                    onThemeUpdate(updatedUser);
-                }
+            if (onThemeUpdate) {
+                await onThemeUpdate();
             }
+            
+            setMessage({ type: 'success', text: 'Theme updated successfully!' });
+            setTimeout(() => setMessage({ type: '', text: '' }), 2000);
         } catch (error) {
             console.error('Failed to update theme:', error);
             setMessage({
@@ -198,20 +218,13 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
             });
             // Revert to previous theme on error
             setSelectedTheme(currentUser?.theme || 1);
+            applyTheme(currentUser?.theme || 1);
         } finally {
             setLoading(false);
         }
     };
 
-    const applyTheme = useCallback((themeId) => {
-        // Create an element for transition animation
-        const transitionOverlay = document.createElement('div');
-        transitionOverlay.className = 'theme-transition';
-        document.body.appendChild(transitionOverlay);
-
-        // Add class for active theme change
-        document.documentElement.classList.add('theme-change-active');
-
+    const applyTheme = (themeId) => {
         // Remove all theme classes
         THEMES.forEach(theme => {
             document.documentElement.classList.remove(theme.className);
@@ -221,28 +234,15 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
         const selectedThemeObj = THEMES.find(t => t.id === themeId);
         if (selectedThemeObj) {
             document.documentElement.classList.add(selectedThemeObj.className);
-
-            // Set CSS variables for preview
-            document.documentElement.style.setProperty('--theme-color-1', selectedThemeObj.colors[0]);
-            document.documentElement.style.setProperty('--theme-color-2', selectedThemeObj.colors[1]);
-            document.documentElement.style.setProperty('--theme-color-3', selectedThemeObj.colors[2]);
+            console.log('Applied theme:', selectedThemeObj.name);
         }
-
-        // Remove the active theme change class after animation
-        setTimeout(() => {
-            document.documentElement.classList.remove('theme-change-active');
-            if (transitionOverlay.parentNode) {
-                transitionOverlay.parentNode.removeChild(transitionOverlay);
-            }
-        }, 800);
-
-    }, []);
+    };
 
     const getPasswordStrengthColor = () => {
         switch (passwordStrength) {
-            case 'weak': return '#ff6b6b';
-            case 'medium': return '#ffd93d';
-            case 'strong': return '#6bcf7f';
+            case 'weak': return '#EF4444';
+            case 'medium': return '#F59E0B';
+            case 'strong': return '#10B981';
             default: return 'transparent';
         }
     };
@@ -256,10 +256,10 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
         }
     };
 
-    const handleLogout = useCallback(() => {
+    const handleLogout = () => {
         if (isLoggingOut) return;
-
         setIsLoggingOut(true);
+        
         try {
             if (onClose) onClose();
             if (onLogout) {
@@ -271,7 +271,7 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
         } finally {
             setIsLoggingOut(false);
         }
-    }, [onClose, onLogout, isLoggingOut]);
+    };
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -279,16 +279,11 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
 
                 <div className="modal-header">
                     <h3 className="modal-title">Account Settings</h3>
-                    <button
-                        className="icon-btn"
-                        onClick={onClose}
-                        disabled={loading}
-                    >
+                    <button className="icon-btn" onClick={onClose} disabled={loading}>
                         <X size={24} />
                     </button>
                 </div>
 
-                {/* Tab Navigation */}
                 <div className="settings-tabs">
                     <button
                         className={`tab-button ${activeTab === 'general' ? 'active' : ''}`}
@@ -306,39 +301,25 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                     </button>
                 </div>
 
-                {/* Message Display */}
                 {message.text && (
-                    <div
-                        className="message-banner"
-                        style={{
-                            padding: '12px 16px',
-                            margin: '0 20px',
-                            borderRadius: '8px',
-                            backgroundColor:
-                                message.type === 'error' ? 'rgba(255, 107, 107, 0.1)' :
-                                    message.type === 'success' ? 'rgba(107, 207, 127, 0.1)' :
-                                        'rgba(255, 217, 61, 0.1)',
-                            color:
-                                message.type === 'error' ? '#ff6b6b' :
-                                    message.type === 'success' ? '#6bcf7f' :
-                                        '#ffd93d',
-                            border: `1px solid ${message.type === 'error' ? '#ff6b6b' :
-                                message.type === 'success' ? '#6bcf7f' :
-                                    '#ffd93d'
-                                }`,
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            flexShrink: 0
-                        }}
-                    >
+                    <div style={{
+                        padding: '12px 16px',
+                        margin: '16px 28px 16px 28px',
+                        borderRadius: '10px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        backgroundColor: message.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
+                            message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                        color: message.type === 'error' ? '#EF4444' :
+                            message.type === 'success' ? '#10B981' : '#F59E0B',
+                        border: `1px solid ${message.type === 'error' ? '#EF4444' :
+                            message.type === 'success' ? '#10B981' : '#F59E0B'}`,
+                    }}>
                         {message.text}
                     </div>
                 )}
 
-                <div className="account-content-scroll" style={{
-                    paddingTop: message.text ? '15px' : '0'
-                }}>
-                    {/* General Tab Content */}
+                <div className="account-content-scroll">
                     {activeTab === 'general' && (
                         <>
                             <div className="account-section">
@@ -371,8 +352,8 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                                     <button
                                         className="btn"
                                         onClick={handleSaveGeneralInfo}
-                                        disabled={loading || (!username.trim())}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                        disabled={loading || !username.trim()}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                                     >
                                         <Save size={16} />
                                         {loading ? 'Saving...' : 'Save Changes'}
@@ -397,10 +378,10 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
 
                                 {passwordStrength && (
                                     <div style={{
-                                        marginTop: '4px',
+                                        marginTop: '8px',
                                         fontSize: '12px',
                                         color: getPasswordStrengthColor(),
-                                        fontWeight: '500'
+                                        fontWeight: '600'
                                     }}>
                                         Password Strength: {getPasswordStrengthText()}
                                     </div>
@@ -423,7 +404,7 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                                         className="btn"
                                         onClick={handleSavePassword}
                                         disabled={loading || !newPassword || !confirmNewPassword}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                                     >
                                         <Save size={16} />
                                         {loading ? 'Changing...' : 'Change Password'}
@@ -433,16 +414,16 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                         </>
                     )}
 
-                    {/* Appearance Tab Content */}
                     {activeTab === 'appearance' && (
                         <div className="account-section">
                             <h4 className="section-title">Choose Your Theme</h4>
                             <p style={{
                                 color: 'var(--color-text-muted)',
                                 fontSize: '14px',
-                                marginBottom: '20px'
+                                marginBottom: '24px',
+                                lineHeight: '1.5'
                             }}>
-                                Select a theme to personalize your workspace
+                                Select a theme to personalize your workspace. Choose from light, dark, and colorful options.
                             </p>
 
                             <div className="theme-grid">
@@ -481,17 +462,15 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                     )}
                 </div>
 
-                {/* Footer with Logout */}
                 <div className="menu-footer">
                     <button
-                        className="menu-item btn-link logout-btn"
+                        className="logout-btn"
                         onClick={handleLogout}
                         disabled={loading || isLoggingOut}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            color: '#ff6b6b'
                         }}
                     >
                         <LogOut size={18} />

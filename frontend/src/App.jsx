@@ -38,16 +38,16 @@ function App() {
           } catch (error) {
             console.error('Failed to load user theme:', error);
             // Apply default theme
-            applyTheme(3);
+            applyTheme(1);
           }
         } else {
           // Apply default theme for unauthenticated users
-          applyTheme(3);
+          applyTheme(1);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
         setIsAuthenticated(false);
-        applyTheme(3);
+        applyTheme(1);
       } finally {
         setLoading(false);
       }
@@ -84,7 +84,7 @@ function App() {
     apiClient.clearToken();
     setIsAuthenticated(false);
     // Reset to default theme on logout
-    applyTheme(3);
+    applyTheme(1);
   };
 
   if (loading) {

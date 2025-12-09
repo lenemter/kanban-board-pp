@@ -56,66 +56,67 @@ function CreateTaskModal({ onClose, onCreate, boardUsers = [], currentColumnId }
           <h3 className="modal-title">Create new task</h3>
           <button className="icon-btn" onClick={onClose}>×</button>
         </div>
-
-        <label>Title*</label>
-        <input
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder="Enter task title"
-        />
-
-        <label>Description</label>
-        <textarea
-          value={desc}
-          onChange={e => setDesc(e.target.value)}
-          placeholder="Enter task description"
-        />
-
-        <label>Priority</label>
-        <select value={priority} onChange={e => setPriority(e.target.value)}>
-          <option value="Low">Low</option>
-          <option value="Medium">Medium</option>
-          <option value="High">High</option>
-        </select>
-
-        <label>Assignee</label>
-        <select
-          value={assignee}
-          onChange={e => setAssignee(e.target.value)}
-        >
-          <option value="">Unassigned</option>
-          {users.map(u => {
-            const uid = u.id ?? u.user_id ?? u._id ?? u.email ?? u.username ?? u.name ?? u.full_name ?? u.display_name;
-            const label = u.name ?? u.full_name ?? u.display_name ?? u.username ?? u.email ?? uid;
-            return (
-              <option key={uid} value={uid}>{label}</option>
-            );
-          })}
-        </select>
-
-        <label>Due Date</label>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="account-content-scroll">
+          <label>Title*</label>
           <input
-            type="date"
-            value={dueDate}
-            onChange={e => setDueDate(e.target.value)}
-            style={{ flex: 1 }}
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Enter task title"
           />
-          {dueDate && (
-            <button 
-              className="icon-btn" 
-              onClick={() => setDueDate('')}
-              title="Remove due date"
-              style={{ padding: '4px 8px' }}
-            >
-              ×
-            </button>
-          )}
-        </div>
 
-        <div className="modal-actions">
-          <button className="btn ghost" onClick={onClose}>Cancel</button>
-          <button className="btn" onClick={handleCreate}>Create Task</button>
+          <label>Description</label>
+          <textarea
+            value={desc}
+            onChange={e => setDesc(e.target.value)}
+            placeholder="Enter task description"
+          />
+
+          <label>Priority</label>
+          <select value={priority} onChange={e => setPriority(e.target.value)}>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+
+          <label>Assignee</label>
+          <select
+            value={assignee}
+            onChange={e => setAssignee(e.target.value)}
+          >
+            <option value="">Unassigned</option>
+            {users.map(u => {
+              const uid = u.id ?? u.user_id ?? u._id ?? u.email ?? u.username ?? u.name ?? u.full_name ?? u.display_name;
+              const label = u.name ?? u.full_name ?? u.display_name ?? u.username ?? u.email ?? uid;
+              return (
+                <option key={uid} value={uid}>{label}</option>
+              );
+            })}
+          </select>
+
+          <label>Due Date</label>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            {dueDate && (
+              <button
+                className="icon-btn"
+                onClick={() => setDueDate('')}
+                title="Remove due date"
+                style={{ padding: '4px 8px' }}
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <div className="modal-actions">
+            <button className="btn ghost" onClick={onClose}>Cancel</button>
+            <button className="btn" onClick={handleCreate}>Create Task</button>
+          </div>
         </div>
       </div>
     </div>

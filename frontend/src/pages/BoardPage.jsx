@@ -312,11 +312,13 @@ function BoardPage({ onLogout }) {
             }
         };
 
-        document.addEventListener('click', handleClickOutside);
-        return () => {
-            document.removeEventListener('click', handleClickOutside);
-        };
-    }, []);
+        if (boardMenuOpen !== null) {
+            document.addEventListener('click', handleClickOutside);
+            return () => {
+                document.removeEventListener('click', handleClickOutside);
+            };
+        }
+    }, [boardMenuOpen]);
 
     const isOwner = currentUser && board && board.owner_id === currentUser.id;
 

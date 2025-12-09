@@ -88,8 +88,8 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                 // Apply theme on mount
                 applyTheme(themeId);
             } else {
-                setSelectedTheme(3);
-                applyTheme(3);
+                setSelectedTheme(1);
+                applyTheme(1);
             }
         }
     }, [currentUser]);

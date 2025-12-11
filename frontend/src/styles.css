@@ -386,6 +386,7 @@ button, input, select, textarea {
     padding: 0;
     height: 100vh;
     overflow: hidden;
+    min-width: 0;
 }
 
 .topbar {
@@ -555,11 +556,39 @@ button, input, select, textarea {
 /* ======================================= */
 .board-wrap {
   flex-grow: 1;
+  display: flex;
+  padding: 24px;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 20px;
+  height: 100%; 
   min-height: 0;
-  height: calc(100vh - 85px);
+}
+
+/* Enhanced scrollbar visibility */
+.board-wrap::-webkit-scrollbar {
+    height: 14px;
+}
+
+.board-wrap::-webkit-scrollbar-track {
+    background: var(--color-bg-base);
+    border-radius: 10px;
+    margin: 0 20px;
+}
+
+.board-wrap::-webkit-scrollbar-thumb {
+    background: var(--color-border-panel-stroke);
+    border-radius: 10px;
+    border: 3px solid var(--color-bg-base);
+}
+
+.board-wrap::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent);
+}
+
+/* Firefox */
+.board-wrap {
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-border-panel-stroke) var(--color-bg-base);
 }
 
 .columns {
@@ -567,6 +596,8 @@ button, input, select, textarea {
     align-items: flex-start;
     width: max-content;
     height: 100%;
+    padding-bottom: 20px;
+    flex-wrap: nowrap;
 }
 
 .columns > * {
@@ -1477,6 +1508,7 @@ button, input, select, textarea {
     font-weight: 600;
     margin-top: 8px;
     border-radius: 10px;
+    justify-content: center;
 }
 
 .auth-modal .error-message {

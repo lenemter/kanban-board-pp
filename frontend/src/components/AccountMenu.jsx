@@ -208,8 +208,6 @@ function AccountMenu({ onClose, onLogout, currentUser, onThemeUpdate }) {
                 await onThemeUpdate();
             }
             
-            setMessage({ type: 'success', text: 'Theme updated successfully!' });
-            setTimeout(() => setMessage({ type: '', text: '' }), 2000);
         } catch (error) {
             console.error('Failed to update theme:', error);
             setMessage({

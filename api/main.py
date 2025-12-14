@@ -33,3 +33,4 @@ app.include_router(api.routers.columns_router, prefix=api.utils.PREFIX)
 app.include_router(api.routers.tasks_router, prefix=api.utils.PREFIX)
 app.include_router(api.routers.task_comments_router, prefix=api.utils.PREFIX)
 app.include_router(api.routers.subtasks_router, prefix=api.utils.PREFIX)
+# вроде норм

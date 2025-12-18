@@ -35,4 +35,4 @@ def client(app):
     """Фикстура для тестового клиента"""
     from fastapi.testclient import TestClient
     return TestClient(app)
-# вроде нормаль
+# вроде нормально

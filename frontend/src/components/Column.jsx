@@ -18,6 +18,12 @@ function Column({
   const [isRenaming, setIsRenaming] = React.useState(false);
   const [columnName, setColumnName] = React.useState(column.title);
 
+  React.useEffect(() => {
+    if (!isRenaming) {
+      setColumnName(column.title);
+    }
+  }, [column.title, isRenaming]);
+
   const handleRename = () => {
     if (columnName.trim() && columnName !== column.title) {
       onRenameColumn?.(column.id, columnName.trim());

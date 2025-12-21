@@ -107,6 +107,7 @@ function BoardPage({ onLogout }) {
 
         if (onLogout) {
             onLogout();
+            navigate('/login');
         } else {
             apiClient.clearToken();
             navigate('/login');

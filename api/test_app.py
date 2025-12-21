@@ -173,4 +173,4 @@ if __name__ == "__main__":
         print("🎉 ALL TESTS PASSED! FastAPI setup is correct.")
     else:
         print("⚠️  Some tests failed, but core FastAPI functionality works.")
-# вроде нормально
+# вроде нормально :)

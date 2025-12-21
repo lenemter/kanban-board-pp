@@ -178,4 +178,4 @@ def test_fastapi_app_configuration():
 
 if __name__ == "__main__":
     test_fastapi_app_configuration()
-# вроде нормаль
+# вроде нормально

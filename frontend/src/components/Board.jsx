@@ -11,6 +11,7 @@ function Board({
   onOpenEdit, 
   onOpenCreateColumn, 
   onRequestDeleteColumn,
+  onRenameColumn,
   currentBoardId,
   onReloadBoard,
   isReadOnly = false
@@ -171,6 +172,7 @@ function Board({
                   index={index} 
                   onOpenCreate={() => onOpenCreate(col.id)}
                   onOpenEdit={onOpenEdit}
+                  onRenameColumn={onRenameColumn}
                   onRequestDelete={() => onRequestDeleteColumn && onRequestDeleteColumn(col.id, col.title)}
                   isReadOnly={isReadOnly}
                 />

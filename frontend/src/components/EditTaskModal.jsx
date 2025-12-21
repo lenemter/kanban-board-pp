@@ -60,6 +60,7 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
                     id: s.id,
                     text: s.title,
                     done: s.is_done,
+                    _status: 'unchanged',
                 }));
                 setSubtasks(formattedSubtasks);
 
@@ -108,9 +109,39 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
         };
 
         try {
+            // First, update task main fields
             await apiClient.updateTask(card.id, updateData);
 
-            onSave(card.id, updateData);
+            // Then process subtasks changes in batch
+            const toCreate = subtasks.filter(s => s._status === 'added');
+            const toUpdate = subtasks.filter(s => s._status === 'modified' && !String(s.id).startsWith('temp-'));
+            const toDelete = subtasks.filter(s => s._status === 'deleted' && !String(s.id).startsWith('temp-'));
+
+            // Create new subtasks and honor their `done` state if user toggled it before save
+            for (const s of toCreate) {
+                try {
+                    const created = await apiClient.createSubtask(card.id, s.text);
+                    if (s.done) {
+                        try {
+                            await apiClient.updateSubtask(created.id, { title: created.title, is_done: true });
+                        } catch (innerErr) {
+                            console.warn('Failed to set new subtask done state:', innerErr);
+                        }
+                    }
+                } catch (createErr) {
+                    console.error('Failed to create subtask:', createErr);
+                    // continue processing others
+                }
+            }
+
+            // Update changed subtasks
+            const updatePromises = toUpdate.map(s => apiClient.updateSubtask(s.id, { title: s.text, is_done: s.done }));
+            // Delete removed subtasks
+            const deletePromises = toDelete.map(s => apiClient.deleteSubtask(s.id));
+
+            await Promise.all([...updatePromises, ...deletePromises]);
+
+            onSave(card.id, updateData, { fromModal: true });
             onClose();
 
         } catch (err) {
@@ -121,66 +152,42 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
         }
     };
 
-    const handleAddSubtask = async () => {
+    const handleAddSubtask = () => {
         if (newSubtaskTitle.trim() === '' || isSaving || isReadOnly) return;
 
-        try {
-            const newSubtask = await apiClient.createSubtask(card.id, newSubtaskTitle.trim());
-
-            setSubtasks(prev => [...prev, {
-                id: newSubtask.id,
-                text: newSubtask.title,
-                done: newSubtask.is_done,
-            }]);
-            setNewSubtaskTitle('');
-        } catch (err) {
-            console.error('Failed to add subtask:', err);
-            setError('Failed to add subtask.');
-        }
-    };
-
-    const handleToggleSubtask = async (subtaskId, currentDoneStatus) => {
-        if (isReadOnly) return;
-        
-        const newDoneStatus = !currentDoneStatus;
-
-        const subtaskToUpdate = subtasks.find(t => t.id === subtaskId);
-        if (!subtaskToUpdate) {
-            console.error('Subtask not found for ID:', subtaskId);
-            return;
-        }
-
-        const updatePayload = {
-            is_done: newDoneStatus,
-            title: subtaskToUpdate.text
+        const tempId = `temp-${Date.now()}`;
+        const newSub = {
+            id: tempId,
+            text: newSubtaskTitle.trim(),
+            done: false,
+            _status: 'added',
         };
 
-        setSubtasks(prev => prev.map(t =>
-            t.id === subtaskId ? { ...t, done: newDoneStatus } : t
-        ));
-
-        try {
-            await apiClient.updateSubtask(subtaskId, updatePayload);
-        } catch (err) {
-            console.error('Failed to toggle subtask:', err);
-            setError('Failed to update subtask status.');
-            setSubtasks(prev => prev.map(t =>
-                t.id === subtaskId ? { ...t, done: !newDoneStatus } : t
-            ));
-        }
+        setSubtasks(prev => [...prev, newSub]);
+        setNewSubtaskTitle('');
     };
 
-    const handleRemoveSubtask = async (subtaskId) => {
+    const handleToggleSubtask = (subtaskId, currentDoneStatus) => {
         if (isReadOnly) return;
-        
-        setSubtasks(prev => prev.filter(t => t.id !== subtaskId));
 
-        try {
-            await apiClient.deleteSubtask(subtaskId);
-        } catch (err) {
-            console.error('Failed to remove subtask:', err);
-            setError('Failed to remove subtask.');
-        }
+        const newDoneStatus = !currentDoneStatus;
+
+        setSubtasks(prev => prev.map(t => {
+            if (t.id !== subtaskId) return t;
+            const base = { ...t, done: newDoneStatus };
+            if (t._status === 'unchanged') base._status = 'modified';
+            return base;
+        }));
+    };
+
+    const handleRemoveSubtask = (subtaskId) => {
+        if (isReadOnly) return;
+
+        setSubtasks(prev => prev.map(t => {
+            if (t.id !== subtaskId) return t;
+            if (String(t.id).startsWith('temp-')) return null;
+            return { ...t, _status: 'deleted' };
+        }).filter(Boolean));
     };
 
     const handleAddComment = async () => {
@@ -203,6 +210,9 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
             setError('Failed to add comment.');
         }
     };
+
+    // Only show subtasks that are not marked as deleted.
+    const visibleSubtasks = subtasks.filter(s => s._status !== 'deleted');
 
     return (
         <div className="modal-backdrop" onClick={onClose}>
@@ -287,16 +297,19 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
                                     readOnly={isReadOnly}
                                     style={{ flex: 1 }}
                                 />
-                                {dueDate && !isReadOnly && (
-                                    <button 
-                                        className="icon-btn" 
-                                        onClick={() => setDueDate('')}
-                                        title="Remove due date"
-                                        disabled={isSaving}
+                                    <button
+                                        className="icon-btn"
+                                        onClick={() => {
+                                            if (isSaving || isReadOnly) return;
+                                            if (!dueDate) return;
+                                            setDueDate('');
+                                        }}
+                                        title={dueDate ? 'Remove due date' : 'No due date set'}
+                                        disabled={isSaving || isReadOnly || !dueDate}
+                                        aria-disabled={isSaving || isReadOnly || !dueDate}
                                     >
                                         <X size={18} />
                                     </button>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -310,30 +323,34 @@ function EditTaskModal({ card, onClose, onSave, boardUsers = [], currentUserId, 
                         readOnly={isReadOnly}
                     />
 
-                    <h4 className="section-title">Subtasks {loading && subtasks.length === 0 ? '(Loading...)' : ''}</h4>
+                    <h4 className="section-title">Subtasks {loading && visibleSubtasks.length === 0 ? '(Loading...)' : ''}</h4>
                     <div className="subtasks-list">
-                        {subtasks.map(sub => (
-                            <div key={sub.id} className="subtask-item">
-                                <input
-                                    type="checkbox"
-                                    checked={sub.done}
-                                    onChange={() => handleToggleSubtask(sub.id, sub.done)}
-                                    disabled={isSaving || isReadOnly}
-                                    title={isReadOnly ? 'Read-only access' : ''}
-                                    style={{ cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
-                                />
-                                <span className={sub.done ? 'subtask-done' : ''}>{sub.text}</span>
-                                {!isReadOnly && (
-                                    <button 
-                                        className="icon-btn remove-subtask-btn" 
-                                        onClick={() => handleRemoveSubtask(sub.id)} 
-                                        disabled={isSaving}
-                                    >
-                                        <X size={16} />
-                                    </button>
-                                )}
-                            </div>
-                        ))}
+                        {visibleSubtasks.length === 0 && !loading ? (
+                            <div className="no-subtasks-placeholder">No subtasks yet</div>
+                        ) : (
+                            visibleSubtasks.map(sub => (
+                                <div key={sub.id} className="subtask-item">
+                                    <input
+                                        type="checkbox"
+                                        checked={sub.done}
+                                        onChange={() => handleToggleSubtask(sub.id, sub.done)}
+                                        disabled={isSaving || isReadOnly}
+                                        title={isReadOnly ? 'Read-only access' : ''}
+                                        style={{ cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
+                                    />
+                                    <span className={sub.done ? 'subtask-done' : ''}>{sub.text}</span>
+                                    {!isReadOnly && (
+                                        <button 
+                                            className="icon-btn remove-subtask-btn" 
+                                            onClick={() => handleRemoveSubtask(sub.id)} 
+                                            disabled={isSaving}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     {!isReadOnly && (

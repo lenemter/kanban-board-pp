@@ -107,6 +107,7 @@ function BoardPage({ onLogout }) {
 
         if (onLogout) {
             onLogout();
+            navigate('/login');
         } else {
             apiClient.clearToken();
             navigate('/login');
@@ -245,6 +246,32 @@ function BoardPage({ onLogout }) {
         } catch (error) {
             console.error("Error creating column:", error);
             throw new Error(error.message || "Failed to create column");
+        }
+    };
+
+    const handleRenameColumn = async (columnId, newName) => {
+        if (isReadOnly) return;
+
+        // Optimistic update
+        setBoard(prev => {
+            if (!prev) return prev;
+            const newBoard = JSON.parse(JSON.stringify(prev));
+            const col = newBoard.columns.find(c => Number(c.id) === Number(columnId));
+            if (col) col.title = newName;
+            return newBoard;
+        });
+
+        try {
+            await apiClient.updateColumn(columnId, { name: newName });
+        } catch (error) {
+            console.error('Error renaming column:', error);
+            // Revert by reloading board data on failure
+            try {
+                loadBoardData(boardId);
+            } catch (reloadErr) {
+                console.error('Failed to reload board after rename error:', reloadErr);
+            }
+            throw new Error(error.message || 'Failed to rename column');
         }
     };
 
@@ -561,6 +588,7 @@ function BoardPage({ onLogout }) {
                         currentBoardId={boardId}
                         onReloadBoard={handleReloadBoard}
                         isReadOnly={isReadOnly}
+                        onRenameColumn={handleRenameColumn}
                     />
                 </div>
             </div>
